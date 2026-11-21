@@ -1,0 +1,6 @@
+{
+  "name": "Who Knows Me Better?",
+  "description": "Create personal multiple-choice quizzes about yourself, share your link with friends, and discover who knows you best on a percentage leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

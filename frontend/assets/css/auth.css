@@ -1,0 +1,136 @@
+/* Authentication Pages (Login & Register) */
+.auth-wrapper {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+.auth-card {
+  padding: 2.25rem;
+}
+
+.auth-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.auth-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.auth-alert {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-inner);
+  background-color: var(--bg-pink);
+  border: 1.5px solid #F6C4D5;
+  color: #8B2332;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-form {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.input-prefix-wrap {
+  position: relative;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-placeholder);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.input-with-prefix {
+  padding-left: 2.25rem;
+}
+
+.input-with-toggle {
+  padding-right: 3rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.password-toggle-btn:hover {
+  background-color: var(--bg-lavender);
+  color: var(--text-main);
+}
+
+.field-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.field-hint.ok {
+  color: #1F6A41;
+}
+
+.field-hint.error {
+  color: var(--danger-bg);
+}
+
+.field-hint.muted {
+  color: var(--text-muted);
+}
+
+.demo-box {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.demo-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-footer-link {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Who Knows Me Better? — Personal Friendship Quiz</title>
+    <meta name="description" content="Create personal multiple-choice quizzes about yourself, share your link with friends, and discover who knows you best on a percentage leaderboard." />
+    <meta property="og:title" content="Who Knows Me Better? — Personal Friendship Quiz" />
+    <meta property="og:description" content="Create personal multiple-choice quizzes about yourself, share your link with friends, and discover who knows you best on a percentage leaderboard." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/css/quiz.css" />
+    <link rel="stylesheet" href="/assets/css/responsive.css" />
+  </head>
+  <body>
+    <header id="app-header" class="site-header"></header>
+
+    <main class="page-main">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-grid">
+            <div>
+              <p class="hero-kicker">Personal Friendship Trivia · No Clutter</p>
+              <h1 class="hero-title">How well do your friends really know you?</h1>
+              <p class="hero-desc">
+                Build a quick multiple-choice quiz about your favourites, habits, and dream spots.
+                Share one personal link and see who climbs to the top of your match leaderboard.
+              </p>
+
+              <div class="hero-ctas">
+                <a id="hero-primary-cta" href="/register" class="btn btn-primary btn-lg">
+                  <span>Create Your Quiz</span>
+                  <span aria-hidden="true">&#8594;</span>
+                </a>
+                <a id="hero-secondary-cta" href="/login" class="btn btn-ghost btn-lg">
+                  Login
+                </a>
+              </div>
+
+              <div class="hero-meta">
+                <span>Free to play</span>
+                <span aria-hidden="true">&#183;</span>
+                <span>No email or phone required</span>
+                <span aria-hidden="true">&#183;</span>
+                <a href="/quiz/fahim" class="text-link">Try Fahim's live quiz</a>
+              </div>
+            </div>
+
+            <!-- Interactive Example Quiz Preview -->
+            <div>
+              <div class="card">
+                <div class="progress-meta">
+                  <span>Interactive Preview &#183; Favourite Food</span>
+                  <span class="tabular-nums">Question 1 of 5</span>
+                </div>
+
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: 60%"></div>
+                </div>
+
+                <h2 style="margin-top: 1.25rem; font-size: 1.35rem; font-weight: 700;">
+                  What is my favourite food?
+                </h2>
+
+                <div id="sample-options" class="mcq-list" style="margin-top: 1.15rem;">
+                  <button type="button" class="mcq-option" data-sample="biryani" style="min-height: 54px;">
+                    <span>Biryani</span>
+                    <span class="mcq-radio"></span>
+                  </button>
+                  <button type="button" class="mcq-option" data-sample="kacchi" style="min-height: 54px;">
+                    <span>Kacchi</span>
+                    <span class="mcq-radio"></span>
+                  </button>
+                  <button type="button" class="mcq-option" data-sample="pizza" style="min-height: 54px;">
+                    <span>Pizza</span>
+                    <span class="mcq-radio"></span>
+                  </button>
+                  <button type="button" class="mcq-option" data-sample="burger" style="min-height: 54px;">
+                    <span>Burger</span>
+                    <span class="mcq-radio"></span>
+                  </button>
+                  <button type="button" class="mcq-option" data-sample="pasta" style="min-height: 54px;">
+                    <span>Pasta</span>
+                    <span class="mcq-radio"></span>
+                  </button>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                  <span id="sample-feedback">Tap any option to test the quiz feel.</span>
+                  <a href="/leaderboard/fahim" class="text-link" style="white-space: nowrap;">Sample Leaderboard</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How It Works -->
+      <section id="how-it-works" class="how-it-works">
+        <div class="container">
+          <h2 class="section-heading">Three steps to settle the debate</h2>
+          <p class="section-sub">
+            Built for quick laughs with close friends—no feeds, no ads, and no noisy profiles.
+          </p>
+
+          <div class="steps-grid">
+            <div class="card-lavender">
+              <p class="step-kicker lilac">01. Build</p>
+              <h3 class="step-title">Pick your questions</h3>
+              <p class="step-desc">
+                Use instant category suggestions or write your own 4–5 choice questions with one true answer each.
+              </p>
+            </div>
+            <div class="card-pink">
+              <p class="step-kicker peach">02. Share</p>
+              <h3 class="step-title">Send your quiz link</h3>
+              <p class="step-desc">
+                Drop your personal URL in a group chat. Friends sign in with just a username and take their best shot.
+              </p>
+            </div>
+            <div class="card-mint">
+              <p class="step-kicker mint">03. Rank</p>
+              <h3 class="step-title">See who knows you best</h3>
+              <p class="step-desc">
+                Every score is calculated automatically into a clean percentage leaderboard—without spoiling your correct answers.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <strong style="color: var(--text-main);">Who Knows Me Better?</strong>
+        <div class="footer-links">
+          <a href="/quiz/fahim">Sample Quiz</a>
+          <a href="/leaderboard/fahim">Sample Leaderboard</a>
+          <a id="footer-auth-link" href="/register">Get Started</a>
+        </div>
+      </div>
+    </footer>
+
+    <nav id="mobile-nav" class="mobile-bottom-nav" aria-label="Mobile navigation"></nav>
+    <div id="toast-root" class="toast-stack" aria-live="polite"></div>
+
+    <script type="module" src="/assets/js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register — Who Knows Me Better?</title>
+    <meta name="description" content="Create a personal quiz account using just your name, username, and password." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/css/auth.css" />
+    <link rel="stylesheet" href="/assets/css/responsive.css" />
+  </head>
+  <body data-auth-page="register">
+    <header id="app-header" class="site-header"></header>
+
+    <main class="page-main">
+      <div class="auth-wrapper">
+        <div class="card auth-card">
+          <h1 class="auth-title">Create your account</h1>
+          <p class="auth-subtitle">
+            Just your name, a unique username, and a password—no email or phone number needed.
+          </p>
+
+          <div id="auth-error" class="auth-alert hidden" role="alert"></div>
+
+          <form id="register-form" class="auth-form">
+            <div>
+              <label for="reg-name" class="form-label">Your Name</label>
+              <input
+                id="reg-name"
+                type="text"
+                autocomplete="name"
+                placeholder="e.g. Fahim Ahmed"
+                maxlength="80"
+                required
+                class="form-input"
+              />
+            </div>
+
+            <div>
+              <label for="reg-username" class="form-label">Username</label>
+              <div class="input-prefix-wrap">
+                <span class="input-prefix">@</span>
+                <input
+                  id="reg-username"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="fahim_99"
+                  maxlength="24"
+                  required
+                  class="form-input input-with-prefix"
+                />
+              </div>
+              <p id="username-hint" class="field-hint muted hidden"></p>
+            </div>
+
+            <div>
+              <label for="reg-password" class="form-label">Password</label>
+              <div class="input-prefix-wrap">
+                <input
+                  id="reg-password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="At least 6 characters"
+                  required
+                  class="form-input input-with-toggle"
+                />
+                <button
+                  type="button"
+                  id="toggle-password-btn"
+                  class="password-toggle-btn"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+              <p id="password-hint" class="field-hint muted">Minimum 6 characters required.</p>
+            </div>
+
+            <button id="register-submit-btn" type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              Register
+            </button>
+          </form>
+
+          <p class="auth-footer-link">
+            Already have an account?
+            <a id="switch-to-login" href="/login" class="text-link">Login here</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <nav id="mobile-nav" class="mobile-bottom-nav" aria-label="Mobile navigation"></nav>
+    <div id="toast-root" class="toast-stack" aria-live="polite"></div>
+
+    <script type="module" src="/assets/js/auth.js"></script>
+  </body>
+</html>

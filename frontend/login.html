@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Who Knows Me Better?</title>
+    <meta name="description" content="Log in with your username and password to manage your quiz or play a friend's quiz." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/css/auth.css" />
+    <link rel="stylesheet" href="/assets/css/responsive.css" />
+  </head>
+  <body data-auth-page="login">
+    <header id="app-header" class="site-header"></header>
+
+    <main class="page-main">
+      <div class="auth-wrapper">
+        <div class="card auth-card">
+          <h1 class="auth-title">Welcome back</h1>
+          <p id="login-subtitle" class="auth-subtitle">
+            Log in to manage your quiz, check scores, or play a friend's quiz.
+          </p>
+
+          <div id="auth-error" class="auth-alert hidden" role="alert"></div>
+
+          <form id="login-form" class="auth-form">
+            <div>
+              <label for="login-username" class="form-label">Username</label>
+              <div class="input-prefix-wrap">
+                <span class="input-prefix">@</span>
+                <input
+                  id="login-username"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="fahim"
+                  required
+                  class="form-input input-with-prefix"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="login-password" class="form-label">Password</label>
+              <div class="input-prefix-wrap">
+                <input
+                  id="login-password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Your password"
+                  required
+                  class="form-input input-with-toggle"
+                />
+                <button
+                  type="button"
+                  id="toggle-password-btn"
+                  class="password-toggle-btn"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </div>
+            </div>
+
+            <button id="login-submit-btn" type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              Login
+            </button>
+          </form>
+
+          <div class="demo-box">
+            <span>Sample accounts (password: demo1234):</span>
+            <div class="demo-pills">
+              <button type="button" class="btn btn-sm btn-lavender" data-demo-user="fahim">Fill @fahim</button>
+              <button type="button" class="btn btn-sm btn-pink" data-demo-user="sara">Fill @sara</button>
+            </div>
+          </div>
+
+          <p class="auth-footer-link">
+            New here?
+            <a id="switch-to-register" href="/register" class="text-link">Create an account</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <nav id="mobile-nav" class="mobile-bottom-nav" aria-label="Mobile navigation"></nav>
+    <div id="toast-root" class="toast-stack" aria-live="polite"></div>
+
+    <script type="module" src="/assets/js/auth.js"></script>
+  </body>
+</html>

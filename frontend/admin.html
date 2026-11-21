@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f4f5f7;
+            color: #1f2937;
+        }
+
+        .wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: #4f46e5;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        button.danger {
+            background: #dc2626;
+            padding: 6px 12px;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .login {
+            max-width: 360px;
+            margin: 80px auto;
+            display: grid;
+            gap: 12px;
+        }
+
+        .error {
+            color: #dc2626;
+            font-size: 14px;
+            min-height: 18px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat b {
+            display: block;
+            font-size: 28px;
+            color: #4f46e5;
+        }
+
+        .stat span {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .tablewrap {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        th {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .pager {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN -->
+    <div id="loginView" class="card login hidden">
+        <h1>Admin Login</h1>
+        <input id="adminUser" placeholder="Admin username" autocomplete="username">
+        <input id="adminPass" type="password" placeholder="Admin password" autocomplete="current-password">
+        <div id="loginError" class="error"></div>
+        <button id="loginBtn">Log in</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashView" class="wrap hidden">
+        <div class="top">
+            <h1>Admin Dashboard</h1>
+            <button class="secondary" id="logoutBtn">Log out</button>
+        </div>
+
+        <div class="stats">
+            <div class="card stat"><b id="sUsers">-</b><span>Total users</span></div>
+            <div class="card stat"><b id="sQuizzes">-</b><span>Total quizzes</span></div>
+            <div class="card stat"><b id="sSubs">-</b><span>Total submissions</span></div>
+        </div>
+
+        <div class="card">
+            <input id="searchBox" placeholder="Search by name or username...">
+            <div id="listError" class="error"></div>
+            <div class="tablewrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Quizzes</th>
+                            <th>Submissions</th>
+                            <th>Joined</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rows"></tbody>
+                </table>
+            </div>
+            <div class="pager">
+                <button class="secondary" id="prevBtn">Previous</button>
+                <span id="pageInfo"></span>
+                <button class="secondary" id="nextBtn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const state = { page: 1, pageSize: 20, total: 0, search: '' };
+
+        async function api(path, options = {}) {
+            const res = await fetch('/api/admin' + path, {
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                ...options,
+            });
+            let data = {};
+            try { data = await res.json(); } catch { }
+            if (res.status === 401 && path !== '/login') showLogin();
+            if (!res.ok) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        function showLogin() {
+            $('dashView').classList.add('hidden');
+            $('loginView').classList.remove('hidden');
+        }
+
+        function showDash() {
+            $('loginView').classList.add('hidden');
+            $('dashView').classList.remove('hidden');
+            loadStats();
+            loadUsers();
+        }
+
+        async function loadStats() {
+            try {
+                const s = await api('/stats');
+                $('sUsers').textContent = s.totalUsers;
+                $('sQuizzes').textContent = s.totalQuizzes;
+                $('sSubs').textContent = s.totalSubmissions;
+            } catch { }
+        }
+
+        async function loadUsers() {
+            $('listError').textContent = '';
+            try {
+                const qs = new URLSearchParams({
+                    search: state.search, page: state.page, pageSize: state.pageSize,
+                });
+                const data = await api('/users?' + qs);
+                state.total = data.total;
+                renderRows(data.users);
+                const pages = Math.max(Math.ceil(state.total / state.pageSize), 1);
+                $('pageInfo').textContent = `Page ${state.page} of ${pages} (${state.total} users)`;
+                $('prevBtn').disabled = state.page <= 1;
+                $('nextBtn').disabled = state.page >= pages;
+            } catch (e) {
+                $('listError').textContent = e.message;
+            }
+        }
+
+        function cell(tr, text) {
+            const td = document.createElement('td');
+            td.textContent = text;   // textContent => XSS safe
+            tr.appendChild(td);
+        }
+
+        function renderRows(users) {
+            const tbody = $('rows');
+            tbody.replaceChildren();
+            if (!users.length) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 6;
+                td.textContent = 'No users found';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+            for (const u of users) {
+                const tr = document.createElement('tr');
+                cell(tr, u.name);
+                cell(tr, '@' + u.username);
+                cell(tr, u.quizzes);
+                cell(tr, u.submissions);
+                cell(tr, new Date(u.created_at).toLocaleDateString());
+                const td = document.createElement('td');
+                const btn = document.createElement('button');
+                btn.className = 'danger';
+                btn.textContent = 'Delete';
+                btn.onclick = () => removeUser(u);
+                td.appendChild(btn);
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+        }
+
+        async function removeUser(u) {
+            const ok = confirm(
+                `Delete "${u.name}" (@${u.username})?\n\nThis permanently removes their account, quizzes and submissions. It cannot be undone.`
+            );
+            if (!ok) return;
+            try {
+                await api('/users/' + encodeURIComponent(u.id), { method: 'DELETE' });
+                loadStats();
+                loadUsers();
+            } catch (e) {
+                alert('Delete failed: ' + e.message);
+            }
+        }
+
+        $('loginBtn').onclick = async () => {
+            $('loginError').textContent = '';
+            try {
+                await api('/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username: $('adminUser').value, password: $('adminPass').value }),
+                });
+                $('adminPass').value = '';
+                showDash();
+            } catch (e) {
+                $('loginError').textContent = e.message;
+            }
+        };
+        $('adminPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
+
+        $('logoutBtn').onclick = async () => {
+            await api('/logout', { method: 'POST' }).catch(() => { });
+            showLogin();
+        };
+
+        let timer;
+        $('searchBox').addEventListener('input', (e) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { state.search = e.target.value.trim(); state.page = 1; loadUsers(); }, 350);
+        });
+        $('prevBtn').onclick = () => { state.page--; loadUsers(); };
+        $('nextBtn').onclick = () => { state.page++; loadUsers(); };
+
+        // Page load: already logged in? (cookie valid)
+        api('/stats').then(showDash).catch(showLogin);
+    </script>
+</body>
+
+</html>

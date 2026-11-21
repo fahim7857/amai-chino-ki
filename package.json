@@ -1,0 +1,20 @@
+{
+  "name": "who-knows-me-better",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node backend/server.js",
+    "start": "node backend/server.js",
+    "build": "node backend/scripts/check-js.js",
+    "lint": "node backend/scripts/check-js.js",
+    "test": "node backend/tests/integrity.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.2.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.4"
+  }
+}
