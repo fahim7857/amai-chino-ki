@@ -15,47 +15,46 @@ async function initProfile() {
   renderNavbar(user, '/profile');
 
   const root = document.getElementById('profile-root');
-  root.innerHTML = `${renderSkeleton(3)}<div style="margin-top: 1.5rem;">${renderSkeleton(4)}</div>`;
+  root.innerHTML = `${renderSkeleton(2)}<div style="margin-top: 1.25rem;">${renderSkeleton(3)}</div>`;
 
   async function loadAndRender() {
     try {
       const data = await api.public.getDashboardStats();
       const visibility = data.user.leaderboard_visibility || 'public';
-      const joinedDate = new Date(user.createdAt).toLocaleDateString();
 
       const myQuizzesHtml =
         data.quizzes.length > 0
           ? `<div class="list-divide">${data.quizzes
               .map(
                 (q) => `
-              <div class="list-row" style="flex-wrap: wrap;">
-                <div>
+              <div class="list-row" style="flex-wrap: wrap; gap: 0.5rem;">
+                <div style="min-width: 0;">
                   <p class="meta-line">${
-                    q.status === 'published' ? 'Published' : 'Draft'
-                  } &#183; /quiz/${escapeHtml(q.slug)}</p>
-                  <h3 style="margin-top: 0.2rem; font-size: 1rem; font-weight: 700;">${escapeHtml(
+                    q.status === 'published' ? 'Live ✅' : 'Draft 📝'
+                  }</p>
+                  <h3 class="truncate" style="margin-top: 0.15rem; font-size: 0.95rem; font-weight: 700;">${escapeHtml(
                     q.title
                   )}</h3>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <a href="/create-quiz/${q.id}" class="btn btn-sm btn-outline-soft">Edit</a>
+                  <a href="/create-quiz/${q.id}" class="btn btn-sm btn-outline-soft">✏️ Edit</a>
                   ${
                     q.status === 'published'
                       ? `
-                        <a href="/quiz/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-lavender">Open</a>
-                        <a href="/leaderboard/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-mint">Ranks</a>
+                        <a href="/quiz/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-lavender">🎮 Open</a>
+                        <a href="/leaderboard/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-mint">🏆 Ranks</a>
                       `
                       : ''
                   }
                   <button type="button" class="btn-icon danger" data-delete-quiz="${
                     q.id
-                  }" data-quiz-title="${escapeHtml(q.title)}" aria-label="Delete quiz">&#10005;</button>
+                  }" data-quiz-title="${escapeHtml(q.title)}" aria-label="Delete">✕</button>
                 </div>
               </div>
             `
               )
               .join('')}</div>`
-          : `<p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted);">You haven't created a quiz yet.</p>`;
+          : `<p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">No quizzes created.</p>`;
 
       const takenHtml =
         data.quizzesTaken.length > 0
@@ -64,15 +63,13 @@ async function initProfile() {
                 (item) => `
               <div class="list-row">
                 <div style="min-width: 0;">
-                  <p class="meta-line">${escapeHtml(item.owner_name)} (@${escapeHtml(
-                  item.owner_username
-                )}) &#183; ${item.correct_answers}/${item.total_questions} matched</p>
-                  <p class="truncate" style="margin-top: 0.2rem; font-size: 1rem; font-weight: 700;">${escapeHtml(
+                  <p class="meta-line">@${escapeHtml(item.owner_username)} &#183; ${item.correct_answers}/${item.total_questions}</p>
+                  <p class="truncate" style="margin-top: 0.15rem; font-size: 0.95rem; font-weight: 700;">${escapeHtml(
                     item.quiz_title
                   )}</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
-                  <span class="tabular-nums" style="font-size: 1.125rem; font-weight: 800; color: var(--primary-lilac);">${
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                  <span class="tabular-nums" style="font-size: 1rem; font-weight: 800; color: var(--primary-lilac);">${
                     item.match_percentage
                   }%</span>
                   <a href="/quiz-result/${item.submission_id}" class="btn btn-sm btn-lavender">Result</a>
@@ -81,25 +78,22 @@ async function initProfile() {
             `
               )
               .join('')}</div>`
-          : `<p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted);">
-               You haven't taken any friend's quiz yet. Try <a href="/quiz/fahim" class="text-link">Fahim's sample quiz</a>!
-             </p>`;
+          : `<p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">No quizzes played yet.</p>`;
 
       root.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
-          <section class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <!-- User Info -->
+          <section class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div class="profile-header">
               ${renderAvatar(user.name, 'lg', 'lavender')}
               <div>
-                <h1 style="font-size: 1.5rem; font-weight: 800;">${escapeHtml(user.name)}</h1>
-                <p class="meta-line" style="margin-top: 0.25rem; font-size: 0.85rem;">
-                  @${escapeHtml(user.username)} &#183; Member since ${escapeHtml(joinedDate)}
-                </p>
+                <h1 style="font-size: 1.35rem; font-weight: 800;">${escapeHtml(user.name)}</h1>
+                <p class="meta-line">@${escapeHtml(user.username)}</p>
               </div>
             </div>
 
             <div>
-              <p class="form-label-sm">Leaderboard Visibility</p>
+              <p class="form-label-sm">Leaderboard</p>
               <div class="segmented-control">
                 <button type="button" class="segment-btn ${
                   visibility === 'public' ? 'active' : ''
@@ -111,16 +105,18 @@ async function initProfile() {
             </div>
           </section>
 
+          <!-- My Quizzes -->
           <section class="card">
             <div class="card-header-row">
-              <h2 class="card-title">My Quizzes</h2>
-              <a href="/create-quiz" class="btn btn-sm btn-primary">Create / Edit Quiz</a>
+              <h2 class="card-title">📝 My Quizzes</h2>
+              <a href="/quiz" class="btn btn-sm btn-primary">➕ New Quiz</a>
             </div>
             ${myQuizzesHtml}
           </section>
 
+          <!-- Quizzes Taken -->
           <section class="card">
-            <h2 class="card-title">Quizzes You've Taken</h2>
+            <h2 class="card-title">🎯 Quizzes Played</h2>
             ${takenHtml}
           </section>
         </div>
@@ -131,15 +127,10 @@ async function initProfile() {
           const next = btn.getAttribute('data-vis');
           try {
             await api.public.updateSettings(next);
-            showToast(
-              'success',
-              next === 'public'
-                ? 'Your leaderboard is now public.'
-                : 'Your leaderboard is now private to you and participants.'
-            );
+            showToast('success', next === 'public' ? 'Public ✅' : 'Private 🔒');
             await loadAndRender();
           } catch (err) {
-            showToast('error', err instanceof ApiError ? err.message : 'Could not update settings.');
+            showToast('error', err instanceof ApiError ? err.message : 'Error updating.');
           }
         });
       });
@@ -147,23 +138,23 @@ async function initProfile() {
       document.querySelectorAll('[data-delete-quiz]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const id = Number(btn.getAttribute('data-delete-quiz'));
-          const title = btn.getAttribute('data-quiz-title') || 'this quiz';
+          const title = btn.getAttribute('data-quiz-title') || 'quiz';
           openConfirmModal({
-            title: 'Delete this quiz?',
-            message: `Deleting "${title}" will permanently remove all its questions and friend leaderboard scores.`,
-            confirmLabel: 'Delete Quiz',
+            title: 'Delete Quiz?',
+            message: `Remove "${title}"?`,
+            confirmLabel: 'Delete',
             destructive: true,
             onConfirm: async () => {
               await api.quizzes.delete(id);
-              showToast('success', 'Quiz deleted.');
+              showToast('success', 'Deleted. 🗑️');
               await loadAndRender();
             },
           });
         });
       });
     } catch {
-      showToast('error', 'Could not load profile details.');
-      root.innerHTML = `<div class="card"><p>Could not load profile right now.</p></div>`;
+      showToast('error', 'Could not load profile.');
+      root.innerHTML = `<div class="card"><p>Could not load profile.</p></div>`;
     }
   }
 

@@ -22,10 +22,10 @@ function createDefaultOptions() {
 async function initQuizBuilder() {
   const user = await requireSession();
   if (!user) return;
-  renderNavbar(user, '/create-quiz');
+  renderNavbar(user, '/quiz');
 
   const root = document.getElementById('builder-root');
-  root.innerHTML = `${renderSkeleton(3)}<div style="margin-top: 1.5rem;">${renderSkeleton(5)}</div>`;
+  root.innerHTML = `${renderSkeleton(2)}<div style="margin-top: 1.25rem;">${renderSkeleton(4)}</div>`;
 
   const routeIdRaw = getRouteSegment(1);
   const quizIdParam = routeIdRaw && Number.isInteger(Number(routeIdRaw)) ? Number(routeIdRaw) : null;
@@ -34,12 +34,11 @@ async function initQuizBuilder() {
   const state = {
     quiz: null,
     title: `How well do you know ${user.name.split(' ')[0]}?`,
-    description: 'Answer these multiple-choice questions about me to test our friendship!',
+    description: '',
     editingQuestionId: null,
     category: 'Favourite Food',
     questionText: '',
     options: createDefaultOptions(),
-    showPreview: false,
   };
 
   try {
@@ -55,7 +54,7 @@ async function initQuizBuilder() {
 
     if (state.quiz) {
       state.title = state.quiz.title;
-      state.description = state.quiz.description;
+      state.description = state.quiz.description || '';
     } else {
       try {
         const saved = localStorage.getItem(draftStorageKey);
@@ -70,11 +69,11 @@ async function initQuizBuilder() {
           }
         }
       } catch {
-        // ignore storage parse error
+        // ignore
       }
     }
   } catch (err) {
-    showToast('error', err instanceof ApiError ? err.message : 'Failed to load quiz.');
+    showToast('error', err instanceof ApiError ? err.message : 'Could not load quiz.');
   }
 
   function persistDraft() {
@@ -89,14 +88,14 @@ async function initQuizBuilder() {
         })
       );
     } catch {
-      // ignore storage quota errors
+      // ignore
     }
   }
 
   async function ensureQuizExists() {
     if (state.quiz) return state.quiz;
     const res = await api.quizzes.create({
-      title: state.title.trim() || `How well do you know ${user.name.split(' ')[0]}?`,
+      title: state.title.trim() || `Quiz by ${user.name.split(' ')[0]}`,
       description: state.description.trim(),
       slug: user.username,
     });
@@ -120,7 +119,6 @@ async function initQuizBuilder() {
     state.editingQuestionId = null;
     state.questionText = '';
     state.options = createDefaultOptions();
-    state.showPreview = false;
     try {
       localStorage.removeItem(draftStorageKey);
     } catch {
@@ -130,46 +128,29 @@ async function initQuizBuilder() {
   }
 
   function validateEditor() {
-    if (state.questionText.trim().length < 3) {
-      return 'Question text must be at least 3 characters.';
+    if (state.questionText.trim().length < 2) {
+      return 'Please enter a question.';
     }
     if (state.options.length < 4 || state.options.length > 5) {
-      return 'Every question must have 4 or 5 options.';
+      return '4 or 5 options required.';
     }
-    const seen = new Set();
     for (let i = 0; i < state.options.length; i += 1) {
-      const trimmed = state.options[i].text.trim();
-      if (!trimmed) {
-        return `Option ${i + 1} cannot be empty.`;
+      if (!state.options[i].text.trim()) {
+        return `Option ${i + 1} is empty.`;
       }
-      const lower = trimmed.toLowerCase();
-      if (seen.has(lower)) {
-        return 'Duplicate options are not allowed.';
-      }
-      seen.add(lower);
     }
     if (state.options.filter((o) => o.isCorrect).length !== 1) {
-      return 'Select exactly one correct answer.';
+      return 'Select 1 correct answer (click the green checkmark).';
     }
     return null;
   }
 
   function render() {
     const q = state.quiz;
-    const statusLabel = q
-      ? q.status === 'published'
-        ? q.has_unpublished_changes
-          ? 'Unpublished draft edits'
-          : 'Published'
-        : 'Draft'
-      : 'Draft';
-    const versionLabel = q ? `Version ${q.active_version_number}` : 'New Quiz';
-    const publishLabel =
-      q?.status === 'published' && q.has_unpublished_changes
-        ? 'Publish New Version'
-        : q?.status === 'published'
-          ? 'Published'
-          : 'Publish Quiz';
+    const isLive = q && q.status === 'published';
+    const statusBadge = isLive
+      ? '<span style="color: #137333; font-weight: 700;">Live ✅</span>'
+      : '<span style="color: #B06000; font-weight: 700;">Draft 📝</span>';
 
     const categoryOptionsHtml = QUESTION_CATEGORIES.map(
       (cat) =>
@@ -178,22 +159,64 @@ async function initQuizBuilder() {
         }>${escapeHtml(cat)}</option>`
     ).join('');
 
-    const editorBodyHtml = state.showPreview
-      ? `
-        <div style="margin-top: 1.5rem; background-color: var(--bg-cream); border-radius: var(--radius-inner); padding: 1.25rem; border: 1.5px solid var(--border-subtle);">
-          <p class="meta-line">Preview &#183; ${escapeHtml(state.category)} &#183; Select 1 answer</p>
-          <h3 style="margin-top: 0.5rem; font-size: 1.25rem; font-weight: 700;">
-            ${escapeHtml(state.questionText.trim() || 'Your question will appear here...')}
-          </h3>
-          <div class="mcq-list" style="margin-top: 1rem;">
+    const editorBodyHtml = `
+      <form id="question-form" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div class="category-row">
+          <div style="flex: 1 1 auto; min-width: 0;">
+            <label for="q-category" class="form-label-sm">Topic</label>
+            <select id="q-category" class="form-select">${categoryOptionsHtml}</select>
+          </div>
+          <div style="flex-shrink: 0; align-self: flex-end;">
+            <button type="button" id="use-suggestion-btn" class="btn btn-pink" style="min-height: 44px;">✨ Suggest</button>
+          </div>
+        </div>
+
+        <div>
+          <label for="q-text" class="form-label-sm">Question</label>
+          <input
+            id="q-text"
+            type="text"
+            maxlength="280"
+            placeholder="Write question here..."
+            value="${escapeHtml(state.questionText)}"
+            class="form-input"
+            required
+          />
+        </div>
+
+        <div>
+          <div class="card-header-row" style="margin-bottom: 0.5rem;">
+            <span class="form-label-sm" style="margin: 0;">Options (Click ✓ for Correct Answer)</span>
+            ${
+              state.options.length < 5
+                ? '<button type="button" id="add-option-btn" class="text-link" style="font-size: 0.8rem; font-weight: 700;">+ Option</button>'
+                : ''
+            }
+          </div>
+          <div id="options-editor-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
             ${state.options
               .map(
                 (opt, idx) => `
-              <div class="mcq-option ${opt.isCorrect ? 'correct-preview' : ''}" style="min-height: 52px; cursor: default;">
-                <span>${escapeHtml(opt.text.trim() || `Option ${idx + 1}`)}</span>
+              <div class="option-editor-row">
+                <button
+                  type="button"
+                  class="correct-toggle-btn ${opt.isCorrect ? 'is-correct' : ''}"
+                  data-correct-idx="${idx}"
+                  aria-label="Mark option ${idx + 1} as correct"
+                  title="Mark as correct"
+                >✓</button>
+                <input
+                  type="text"
+                  maxlength="140"
+                  placeholder="Option ${idx + 1}"
+                  value="${escapeHtml(opt.text)}"
+                  data-opt-idx="${idx}"
+                  class="form-input ${opt.isCorrect ? 'option-correct' : ''}"
+                  required
+                />
                 ${
-                  opt.isCorrect
-                    ? '<span style="font-size: 0.75rem; font-weight: 700;">&#10003; Correct Answer</span>'
+                  state.options.length > 4
+                    ? `<button type="button" class="btn-icon danger" data-remove-idx="${idx}" aria-label="Remove option">✕</button>`
                     : ''
                 }
               </div>
@@ -202,93 +225,26 @@ async function initQuizBuilder() {
               .join('')}
           </div>
         </div>
-      `
-      : `
-        <form id="question-form" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 1.15rem;">
-          <div class="category-row">
-            <div>
-              <label for="q-category" class="form-label-sm">Category (Optional)</label>
-              <select id="q-category" class="form-select">${categoryOptionsHtml}</select>
-            </div>
-            <div>
-              <button type="button" id="use-suggestion-btn" class="btn btn-pink" style="width: 100%;">Use Suggestion</button>
-            </div>
-          </div>
 
-          <div>
-            <label for="q-text" class="form-label-sm">Question Text</label>
-            <input
-              id="q-text"
-              type="text"
-              maxlength="280"
-              placeholder="e.g. What is my favourite food?"
-              value="${escapeHtml(state.questionText)}"
-              class="form-input"
-            />
-          </div>
-
-          <div>
-            <div class="card-header-row" style="margin-bottom: 0.5rem;">
-              <span class="form-label-sm" style="margin: 0;">Answer Options (${state.options.length}/5) &#183; Pick 1 correct answer</span>
-              ${
-                state.options.length < 5
-                  ? '<button type="button" id="add-option-btn" class="text-link" style="font-size: 0.75rem;">+ Add Option</button>'
-                  : ''
-              }
-            </div>
-            <div id="options-editor-list" style="display: flex; flex-direction: column; gap: 0.6rem;">
-              ${state.options
-                .map(
-                  (opt, idx) => `
-                <div class="option-editor-row">
-                  <button
-                    type="button"
-                    class="correct-toggle-btn ${opt.isCorrect ? 'is-correct' : ''}"
-                    data-correct-idx="${idx}"
-                    aria-label="Mark option ${idx + 1} as correct answer"
-                    title="Mark as correct answer"
-                  >&#10003;</button>
-                  <input
-                    type="text"
-                    maxlength="140"
-                    placeholder="Option ${idx + 1}"
-                    value="${escapeHtml(opt.text)}"
-                    data-opt-idx="${idx}"
-                    class="form-input ${opt.isCorrect ? 'option-correct' : ''}"
-                  />
-                  ${
-                    state.options.length > 4
-                      ? `<button type="button" class="btn-icon danger" data-remove-idx="${idx}" aria-label="Remove option ${
-                          idx + 1
-                        }">&#10005;</button>`
-                      : ''
-                  }
-                </div>
-              `
-                )
-                .join('')}
-            </div>
-          </div>
-
-          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; flex-wrap: wrap;">
-            ${
-              state.editingQuestionId
-                ? '<button type="button" id="cancel-edit-btn" class="btn btn-outline-soft">Cancel Edit</button>'
-                : ''
-            }
-            <button type="submit" id="save-question-btn" class="btn btn-primary">
-              ${state.editingQuestionId ? 'Save Question Changes' : 'Save Question'}
-            </button>
-          </div>
-        </form>
-      `;
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap;">
+          ${
+            state.editingQuestionId
+              ? '<button type="button" id="cancel-edit-btn" class="btn btn-outline-soft">Cancel</button>'
+              : ''
+          }
+          <button type="submit" id="save-question-btn" class="btn btn-primary">
+            ${state.editingQuestionId ? '💾 Update' : '➕ Add Question'}
+          </button>
+        </div>
+      </form>
+    `;
 
     const questionsListHtml =
       !q || q.questions.length === 0
         ? `
           <div class="empty-state">
-            <p class="empty-state-title">No questions added yet</p>
-            <p class="empty-state-desc">Pick a category suggestion on the left or write your own prompt.</p>
+            <p class="empty-state-title">No questions yet</p>
+            <p class="empty-state-desc">Add your first question on the left!</p>
           </div>
         `
         : `<div class="list-divide">${q.questions
@@ -297,33 +253,25 @@ async function initQuizBuilder() {
               return `
                 <div class="saved-question-item">
                   <div style="min-width: 0;">
-                    <p class="meta-line">${idx + 1}. ${escapeHtml(item.category)} &#183; ${
-                item.options.length
-              } choices</p>
-                    <p style="margin-top: 0.25rem; font-size: 0.9rem; font-weight: 700;">${escapeHtml(
+                    <p class="meta-line">${idx + 1}. ${escapeHtml(item.category)}</p>
+                    <p style="margin-top: 0.2rem; font-size: 0.95rem; font-weight: 700;">${escapeHtml(
                       item.question_text
                     )}</p>
                     ${
                       correctOpt
-                        ? `<p style="margin-top: 0.2rem; font-size: 0.75rem; font-weight: 600; color: #1F6A41;">Answer: ${escapeHtml(
+                        ? `<p style="margin-top: 0.15rem; font-size: 0.8rem; font-weight: 700; color: #137333;">✓ ${escapeHtml(
                             correctOpt.option_text
                           )}</p>`
                         : ''
                     }
                   </div>
-                  <div style="display: flex; align-items: center; gap: 0.15rem; flex-shrink: 0;">
-                    <button type="button" class="btn-icon" data-move-up="${idx}" ${
-                idx === 0 ? 'disabled' : ''
-              } aria-label="Move question up">&#8593;</button>
-                    <button type="button" class="btn-icon" data-move-down="${idx}" ${
-                idx === q.questions.length - 1 ? 'disabled' : ''
-              } aria-label="Move question down">&#8595;</button>
+                  <div style="display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
                     <button type="button" class="btn btn-sm btn-lavender" data-edit-qid="${
                       item.id
-                    }" style="min-height: 32px; padding: 0.2rem 0.65rem;">Edit</button>
+                    }" style="min-height: 32px; padding: 0.2rem 0.65rem;">✏️ Edit</button>
                     <button type="button" class="btn-icon danger" data-del-qid="${
                       item.id
-                    }" aria-label="Delete question">&#10005;</button>
+                    }" aria-label="Delete question">✕</button>
                   </div>
                 </div>
               `;
@@ -331,72 +279,79 @@ async function initQuizBuilder() {
             .join('')}</div>`;
 
     root.innerHTML = `
+      <!-- Search Any User's Exam -->
+      <section class="search-user-card">
+        <div class="search-user-header">
+          <span class="search-user-icon">🔍</span>
+          <h2 class="search-user-title">Play Friend's Exam</h2>
+        </div>
+        <form id="search-quiz-form-builder" class="search-user-form">
+          <div class="input-prefix-wrap search-input-wrap">
+            <span class="input-prefix">@</span>
+            <input
+              id="search-username-input-builder"
+              type="text"
+              placeholder="Username (e.g. fahim)"
+              autocomplete="off"
+              class="form-input input-with-prefix"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary search-play-btn">
+            <span>Play Exam</span>
+            <span aria-hidden="true">🎮</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Quiz Header -->
       <div class="builder-header">
         <div>
-          <p class="meta-line">Quiz Builder &#183; ${escapeHtml(versionLabel)} &#183; ${escapeHtml(
-      statusLabel
-    )}</p>
-          <h1 class="dashboard-heading">Craft your personal quiz</h1>
+          <p class="meta-line">${statusBadge}</p>
+          <h1 class="dashboard-heading">✏️ My Quiz</h1>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           ${
-            q && q.status === 'published'
+            isLive
               ? `<a href="/quiz/${encodeURIComponent(
                   q.slug
-                )}" class="btn btn-outline-soft">View Public Quiz</a>`
+                )}" class="btn btn-outline-soft">🔗 View Quiz</a>`
               : ''
           }
           <button type="button" id="publish-quiz-btn" class="btn btn-primary" ${
             !q || q.question_count === 0 ? 'disabled' : ''
-          }>${escapeHtml(publishLabel)}</button>
+          }>🚀 Publish</button>
         </div>
       </div>
 
-      ${
-        q?.status === 'published' && q.has_unpublished_changes
-          ? `<div class="card-lavender" style="margin-top: 1.25rem; padding: 0.9rem 1.25rem; font-size: 0.875rem; color: #452882;">
-               You are editing a new draft version (v${q.active_version_number}). Friends taking your quiz still see the live published version until you click <strong>Publish New Version</strong>.
-             </div>`
-          : ''
-      }
-
       <div class="builder-grid">
+        <!-- Question Editor -->
         <div class="card">
           <div class="card-header-row">
             <h2 class="card-title">${
-              state.editingQuestionId ? 'Edit Question' : 'Add Multiple-Choice Question'
+              state.editingQuestionId ? '✏️ Edit Question' : '➕ Add Question'
             }</h2>
-            <button type="button" id="toggle-preview-btn" class="btn btn-sm btn-lavender">
-              ${state.showPreview ? 'Back to Editor' : 'Preview Question'}
-            </button>
           </div>
           ${editorBodyHtml}
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-          <form id="quiz-meta-form" class="card" style="display: flex; flex-direction: column; gap: 1rem;">
-            <h2 class="card-title">Quiz Details</h2>
-            <div>
-              <label for="quiz-title-input" class="form-label-sm">Quiz Title</label>
+        <!-- Quiz Details & Questions List -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <form id="quiz-meta-form" class="card" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <h2 class="card-title">Quiz Name</h2>
+            <div style="display: flex; gap: 0.5rem; align-items: stretch;">
               <input id="quiz-title-input" type="text" maxlength="120" value="${escapeHtml(
                 state.title
-              )}" class="form-input" />
+              )}" class="form-input" placeholder="Quiz Title" required />
+              <button type="submit" id="save-meta-btn" class="btn btn-primary" style="flex-shrink: 0;">
+                💾 Save
+              </button>
             </div>
-            <div>
-              <label for="quiz-desc-input" class="form-label-sm">Introduction for Friends</label>
-              <textarea id="quiz-desc-input" maxlength="400" class="form-textarea">${escapeHtml(
-                state.description
-              )}</textarea>
-            </div>
-            <button type="submit" id="save-meta-btn" class="btn btn-ghost" style="align-self: flex-start;">
-              ${q ? 'Update Details' : 'Create Quiz'}
-            </button>
           </form>
 
           <div class="card">
             <div class="card-header-row">
-              <h2 class="card-title">Your Questions (${q ? q.questions.length : 0})</h2>
-              <span class="meta-line">MCQ only</span>
+              <h2 class="card-title">📋 Questions (${q ? q.questions.length : 0})</h2>
             </div>
             ${questionsListHtml}
           </div>
@@ -408,41 +363,44 @@ async function initQuizBuilder() {
   }
 
   function bindEvents() {
-    document.getElementById('toggle-preview-btn').addEventListener('click', () => {
-      state.showPreview = !state.showPreview;
-      render();
+    // Search friend's exam
+    const searchForm = document.getElementById('search-quiz-form-builder');
+    const searchInput = document.getElementById('search-username-input-builder');
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const targetUser = searchInput.value.trim().toLowerCase().replace(/^@+/, '');
+      if (!targetUser) return;
+      window.location.href = `/quiz/${encodeURIComponent(targetUser)}`;
     });
 
     const publishBtn = document.getElementById('publish-quiz-btn');
-    publishBtn.addEventListener('click', async () => {
-      if (!state.quiz) return;
-      publishBtn.disabled = true;
-      publishBtn.textContent = 'Publishing...';
-      try {
-        const res = await api.quizzes.publish(state.quiz.id);
-        state.quiz = res.quiz;
-        showToast('success', 'Your quiz is published and ready to share!');
-        render();
-      } catch (err) {
-        showToast('error', err instanceof ApiError ? err.message : 'Could not publish quiz.');
-        publishBtn.disabled = false;
-        render();
-      }
-    });
+    if (publishBtn) {
+      publishBtn.addEventListener('click', async () => {
+        if (!state.quiz) return;
+        publishBtn.disabled = true;
+        publishBtn.textContent = 'Publishing...';
+        try {
+          const res = await api.quizzes.publish(state.quiz.id);
+          state.quiz = res.quiz;
+          showToast('success', 'Quiz published! 🚀');
+          render();
+        } catch (err) {
+          showToast('error', err instanceof ApiError ? err.message : 'Could not publish.');
+          publishBtn.disabled = false;
+          render();
+        }
+      });
+    }
 
     const titleInput = document.getElementById('quiz-title-input');
-    const descInput = document.getElementById('quiz-desc-input');
     titleInput.addEventListener('input', () => {
       state.title = titleInput.value;
-    });
-    descInput.addEventListener('input', () => {
-      state.description = descInput.value;
     });
 
     document.getElementById('quiz-meta-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!state.title.trim()) {
-        showToast('error', 'Quiz title cannot be empty.');
+        showToast('error', 'Enter a quiz title.');
         return;
       }
       const btn = document.getElementById('save-meta-btn');
@@ -451,25 +409,25 @@ async function initQuizBuilder() {
       try {
         if (!state.quiz) {
           await ensureQuizExists();
-          showToast('success', 'Quiz created! Now add your questions.');
+          showToast('success', 'Quiz created! 🚀');
         } else {
           const res = await api.quizzes.update(state.quiz.id, {
             title: state.title.trim(),
             description: state.description.trim(),
           });
           state.quiz = res.quiz;
-          showToast('success', 'Quiz details updated.');
+          showToast('success', 'Saved! ✅');
         }
         render();
       } catch (err) {
-        showToast('error', err instanceof ApiError ? err.message : 'Could not save quiz details.');
+        showToast('error', err instanceof ApiError ? err.message : 'Could not save.');
         btn.disabled = false;
         render();
       }
     });
 
-    if (!state.showPreview) {
-      const catSelect = document.getElementById('q-category');
+    const catSelect = document.getElementById('q-category');
+    if (catSelect) {
       catSelect.addEventListener('change', () => {
         state.category = catSelect.value;
         if (!state.questionText.trim() && state.options.every((o) => !o.text.trim())) {
@@ -478,64 +436,72 @@ async function initQuizBuilder() {
           persistDraft();
         }
       });
+    }
 
-      document.getElementById('use-suggestion-btn').addEventListener('click', () => {
+    const sugBtn = document.getElementById('use-suggestion-btn');
+    if (sugBtn) {
+      sugBtn.addEventListener('click', () => {
         applySuggestion(state.category);
       });
+    }
 
-      const qInput = document.getElementById('q-text');
+    const qInput = document.getElementById('q-text');
+    if (qInput) {
       qInput.addEventListener('input', () => {
         state.questionText = qInput.value;
         persistDraft();
       });
+    }
 
-      const addOptBtn = document.getElementById('add-option-btn');
-      if (addOptBtn) {
-        addOptBtn.addEventListener('click', () => {
-          if (state.options.length < 5) {
-            state.options.push({ text: '', isCorrect: false });
-            persistDraft();
-            render();
-          }
-        });
-      }
-
-      document.querySelectorAll('[data-opt-idx]').forEach((input) => {
-        input.addEventListener('input', () => {
-          const idx = Number(input.getAttribute('data-opt-idx'));
-          state.options[idx].text = input.value;
-          persistDraft();
-        });
-      });
-
-      document.querySelectorAll('[data-correct-idx]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const idx = Number(btn.getAttribute('data-correct-idx'));
-          state.options = state.options.map((o, i) => ({ ...o, isCorrect: i === idx }));
+    const addOptBtn = document.getElementById('add-option-btn');
+    if (addOptBtn) {
+      addOptBtn.addEventListener('click', () => {
+        if (state.options.length < 5) {
+          state.options.push({ text: '', isCorrect: false });
           persistDraft();
           render();
-        });
+        }
       });
+    }
 
-      document.querySelectorAll('[data-remove-idx]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const idx = Number(btn.getAttribute('data-remove-idx'));
-          if (state.options.length <= 4) return;
-          state.options = state.options.filter((_, i) => i !== idx);
-          if (!state.options.some((o) => o.isCorrect)) {
-            state.options[0].isCorrect = true;
-          }
-          persistDraft();
-          render();
-        });
+    document.querySelectorAll('[data-opt-idx]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const idx = Number(input.getAttribute('data-opt-idx'));
+        state.options[idx].text = input.value;
+        persistDraft();
       });
+    });
 
-      const cancelEditBtn = document.getElementById('cancel-edit-btn');
-      if (cancelEditBtn) {
-        cancelEditBtn.addEventListener('click', resetQuestionEditor);
-      }
+    document.querySelectorAll('[data-correct-idx]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-correct-idx'));
+        state.options = state.options.map((o, i) => ({ ...o, isCorrect: i === idx }));
+        persistDraft();
+        render();
+      });
+    });
 
-      document.getElementById('question-form').addEventListener('submit', async (e) => {
+    document.querySelectorAll('[data-remove-idx]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-remove-idx'));
+        if (state.options.length <= 4) return;
+        state.options = state.options.filter((_, i) => i !== idx);
+        if (!state.options.some((o) => o.isCorrect)) {
+          state.options[0].isCorrect = true;
+        }
+        persistDraft();
+        render();
+      });
+    });
+
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    if (cancelEditBtn) {
+      cancelEditBtn.addEventListener('click', resetQuestionEditor);
+    }
+
+    const qForm = document.getElementById('question-form');
+    if (qForm) {
+      qForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const errMsg = validateEditor();
         if (errMsg) {
@@ -561,12 +527,12 @@ async function initQuizBuilder() {
             : await api.quizzes.addQuestion(activeQuiz.id, payload);
 
           state.quiz = res.quiz;
-          showToast('success', state.editingQuestionId ? 'Question updated!' : 'Question added to quiz!');
+          showToast('success', state.editingQuestionId ? 'Updated! ✅' : 'Added! ✅');
           resetQuestionEditor();
         } catch (err) {
-          showToast('error', err instanceof ApiError ? err.message : 'Failed to save question.');
+          showToast('error', err instanceof ApiError ? err.message : 'Failed to save.');
           saveBtn.disabled = false;
-          saveBtn.textContent = state.editingQuestionId ? 'Save Question Changes' : 'Save Question';
+          saveBtn.textContent = state.editingQuestionId ? '💾 Update' : '➕ Add Question';
         }
       });
     }
@@ -583,51 +549,8 @@ async function initQuizBuilder() {
           text: o.option_text,
           isCorrect: o.is_correct === 1,
         }));
-        state.showPreview = false;
         window.scrollTo({ top: 0, behavior: 'smooth' });
         render();
-      });
-    });
-
-    document.querySelectorAll('[data-move-up]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const idx = Number(btn.getAttribute('data-move-up'));
-        if (idx <= 0) return;
-        const reordered = [...state.quiz.questions];
-        const [moved] = reordered.splice(idx, 1);
-        reordered.splice(idx - 1, 0, moved);
-        try {
-          const res = await api.quizzes.reorderQuestions(
-            state.quiz.id,
-            reordered.map((x) => x.id)
-          );
-          state.quiz = res.quiz;
-          showToast('info', 'Question order updated.');
-          render();
-        } catch (err) {
-          showToast('error', err instanceof ApiError ? err.message : 'Could not reorder questions.');
-        }
-      });
-    });
-
-    document.querySelectorAll('[data-move-down]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const idx = Number(btn.getAttribute('data-move-down'));
-        if (idx >= state.quiz.questions.length - 1) return;
-        const reordered = [...state.quiz.questions];
-        const [moved] = reordered.splice(idx, 1);
-        reordered.splice(idx + 1, 0, moved);
-        try {
-          const res = await api.quizzes.reorderQuestions(
-            state.quiz.id,
-            reordered.map((x) => x.id)
-          );
-          state.quiz = res.quiz;
-          showToast('info', 'Question order updated.');
-          render();
-        } catch (err) {
-          showToast('error', err instanceof ApiError ? err.message : 'Could not reorder questions.');
-        }
       });
     });
 
@@ -638,9 +561,9 @@ async function initQuizBuilder() {
         if (!item) return;
 
         openConfirmModal({
-          title: 'Delete this question?',
-          message: `Are you sure you want to remove "${item.question_text}" from your quiz?`,
-          confirmLabel: 'Delete Question',
+          title: 'Delete Question?',
+          message: `Remove "${item.question_text}"?`,
+          confirmLabel: 'Delete',
           destructive: true,
           onConfirm: async () => {
             const res = await api.quizzes.deleteQuestion(item.id);
@@ -650,7 +573,7 @@ async function initQuizBuilder() {
             } else {
               render();
             }
-            showToast('success', 'Question removed.');
+            showToast('success', 'Deleted. 🗑️');
           },
         });
       });

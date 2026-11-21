@@ -57,16 +57,23 @@ export function createApp() {
     res.sendFile(path.join(frontendDir, filename));
   };
 
-  app.get('/', sendHtml('index.html'));
-  app.get('/login', sendHtml('login.html'));
-  app.get('/register', sendHtml('register.html'));
+  // Only 4 main pages (+ login & register)
+  app.get('/', (_req, res) => res.redirect('/dashboard'));
   app.get('/dashboard', sendHtml('dashboard.html'));
+  app.get('/quiz', sendHtml('create-quiz.html'));
   app.get('/create-quiz', sendHtml('create-quiz.html'));
   app.get('/create-quiz/:id', sendHtml('create-quiz.html'));
+  app.get('/profile', sendHtml('profile.html'));
+  app.get('/leaderboard', sendHtml('leaderboard.html'));
+  app.get('/leaderboard/:username', sendHtml('leaderboard.html'));
+
+  // Auth pages
+  app.get('/login', sendHtml('login.html'));
+  app.get('/register', sendHtml('register.html'));
+
+  // Taking an exam & viewing result
   app.get('/quiz/:username', sendHtml('public-quiz.html'));
   app.get('/quiz-result/:submissionId', sendHtml('quiz-result.html'));
-  app.get('/leaderboard/:username', sendHtml('leaderboard.html'));
-  app.get('/profile', sendHtml('profile.html'));
   app.get('/admin', sendHtml('admin.html'));
 
   app.use((req, res) => {
@@ -74,7 +81,7 @@ export function createApp() {
       res.status(404).json({ error: 'API endpoint not found', code: 'NOT_FOUND' });
       return;
     }
-    res.status(404).sendFile(path.join(frontendDir, 'index.html'));
+    res.redirect('/dashboard');
   });
 
   app.use(errorHandler);

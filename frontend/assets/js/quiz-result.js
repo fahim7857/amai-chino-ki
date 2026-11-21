@@ -1,4 +1,4 @@
-import { api, ApiError } from './api.js';
+import { api } from './api.js';
 import {
   copyToClipboard,
   escapeHtml,
@@ -16,15 +16,14 @@ async function initQuizResult() {
   renderNavbar(user, window.location.pathname);
 
   const root = document.getElementById('result-root');
-  root.innerHTML = `${renderSkeleton(4)}<div style="margin-top: 1.5rem;">${renderSkeleton(3)}</div>`;
+  root.innerHTML = `${renderSkeleton(3)}<div style="margin-top: 1.25rem;">${renderSkeleton(2)}</div>`;
 
   const subId = Number(getRouteSegment(1));
   if (!Number.isInteger(subId)) {
     root.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2.5rem;">
-        <h1 style="font-size: 1.5rem; font-weight: 800;">Result unavailable</h1>
-        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Invalid result link.</p>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1.5rem;">Go to Dashboard</a>
+      <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
+        <h1 style="font-size: 1.35rem; font-weight: 800;">Result Not Found</h1>
+        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
     return;
@@ -37,102 +36,51 @@ async function initQuizResult() {
 
     const formattedPct = Number.isInteger(result.matchPercentage)
       ? result.matchPercentage
-      : Number(result.matchPercentage.toFixed(2));
+      : Number(result.matchPercentage.toFixed(1));
 
     root.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div class="card result-card">
-          <div class="avatar-overlap">
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="card result-card" style="text-align: center;">
+          <div class="avatar-overlap" style="justify-content: center;">
             ${renderAvatar(result.participant.name, 'lg', 'pink')}
             ${renderAvatar(result.owner.name, 'lg', 'lavender')}
           </div>
 
-          <p class="meta-line" style="margin-top: 1.25rem;">
-            ${escapeHtml(result.quizTitle)} &#183; Created by ${escapeHtml(result.owner.name)}
+          <p class="meta-line" style="margin-top: 1rem;">
+            ${escapeHtml(result.quizTitle)} &#183; @${escapeHtml(result.owner.username)}
           </p>
 
-          <p class="result-percentage tabular-nums">${formattedPct}%</p>
-
-          <h1 style="margin-top: 0.75rem; font-size: 1.35rem; font-weight: 800;">
-            You got ${formattedPct}% correct!
-          </h1>
-
-          <div style="margin-top: 1.25rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; max-width: 460px; margin-left: auto; margin-right: auto;">
-            <div style="min-width: 0; background-color: var(--bg-cream); border-radius: var(--radius-inner); padding: 0.85rem 0.5rem;">
-              <p class="meta-line">Total Questions</p>
-              <p class="tabular-nums" style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 800;">${result.totalQuestions}</p>
-            </div>
-            <div style="min-width: 0; background-color: var(--bg-lavender); border-radius: var(--radius-inner); padding: 0.85rem 0.5rem;">
-              <p class="meta-line">Correct Answers</p>
-              <p class="tabular-nums" style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 800;">${result.correctAnswers}</p>
-            </div>
-            <div style="min-width: 0; background-color: var(--bg-pink); border-radius: var(--radius-inner); padding: 0.85rem 0.5rem;">
-              <p class="meta-line">Match Percentage</p>
-              <p class="tabular-nums" style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 800;">${formattedPct}%</p>
-            </div>
-          </div>
-
-          <p style="margin-top: 1rem; font-size: 0.95rem; color: var(--text-body); max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-            ${escapeHtml(result.friendlyMessage)}
+          <p class="result-percentage tabular-nums" style="font-size: 3rem; font-weight: 800; color: var(--primary-lilac); margin-top: 0.5rem;">
+            ${formattedPct}%
           </p>
 
-          <div style="margin-top: 1.75rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+          <p style="font-size: 1.15rem; font-weight: 800; margin-top: 0.25rem;">
+            ${result.correctAnswers} / ${result.totalQuestions} Correct 🎉
+          </p>
+
+          <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
             <a href="/leaderboard/${encodeURIComponent(result.quizSlug)}" class="btn btn-primary">
-              View Leaderboard
+              🏆 Leaderboard
             </a>
-            <a href="/create-quiz" class="btn btn-ghost">Make Your Own Quiz</a>
-          </div>
-        </div>
-
-        <div class="card-pink">
-          <p class="best-friend-kicker">Shareable Result Card</p>
-          <p style="margin-top: 0.5rem; font-size: 1.25rem; font-weight: 800;">
-            "${escapeHtml(result.shareText)}"
-          </p>
-          <p class="truncate" style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-muted);">
-            ${escapeHtml(quizShareUrl)}
-          </p>
-
-          <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <button type="button" id="copy-share-btn" class="btn btn-sm btn-outline-soft">
-              Copy Share Text
-            </button>
-            <button type="button" id="native-share-btn" class="btn btn-sm" style="background-color: var(--secondary-text-accent); color: #FFFFFF;">
-              Share Challenge
-            </button>
+            <a href="/quiz" class="btn btn-outline-soft">✏️ Make Quiz</a>
+            <button type="button" id="share-result-btn" class="btn btn-pink">📤 Share</button>
           </div>
         </div>
       </div>
     `;
 
-    const copyBtn = document.getElementById('copy-share-btn');
-    copyBtn.addEventListener('click', async () => {
-      const ok = await copyToClipboard(
-        `${result.shareText} ${quizShareUrl}`,
-        'Shareable result message copied!'
-      );
-      if (ok) {
-        copyBtn.textContent = 'Copied';
-        setTimeout(() => {
-          copyBtn.textContent = 'Copy Share Text';
-        }, 2000);
-      }
-    });
-
-    document.getElementById('native-share-btn').addEventListener('click', () => {
+    document.getElementById('share-result-btn').addEventListener('click', () => {
       shareUrl({
-        title: result.quizTitle,
-        text: result.shareText,
+        title: `I scored ${formattedPct}% on ${result.owner.name}'s quiz!`,
+        text: `I scored ${formattedPct}% on ${result.owner.name}'s quiz! Can you beat me?`,
         url: quizShareUrl,
       });
     });
-  } catch (err) {
-    const msg = err instanceof ApiError ? err.message : 'Could not load quiz result.';
+  } catch {
     root.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2.5rem;">
-        <h1 style="font-size: 1.5rem; font-weight: 800;">Result unavailable</h1>
-        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">${escapeHtml(msg)}</p>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1.5rem;">Go to Dashboard</a>
+      <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
+        <h1 style="font-size: 1.35rem; font-weight: 800;">Result Not Found</h1>
+        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
   }

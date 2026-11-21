@@ -24,7 +24,7 @@ function wirePasswordToggle(inputId, btnId) {
   btn.addEventListener('click', () => {
     const isHidden = input.type === 'password';
     input.type = isHidden ? 'text' : 'password';
-    btn.textContent = isHidden ? 'Hide' : 'Show';
+    btn.textContent = isHidden ? '🙈' : '👁️';
     btn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
   });
 }
@@ -47,10 +47,6 @@ async function initAuthPage() {
   renderNavbar(null, window.location.pathname);
 
   if (pageType === 'login') {
-    const subtitle = document.getElementById('login-subtitle');
-    if (subtitle && redirectParam) {
-      subtitle.textContent = 'Log in with your username to continue to the quiz.';
-    }
     const switchLink = document.getElementById('switch-to-register');
     if (switchLink && redirectParam) {
       switchLink.href = `/register?redirect=${encodeURIComponent(redirectParam)}`;
@@ -66,19 +62,11 @@ async function initAuthPage() {
       usernameInput.value = usernameInput.value.toLowerCase().replace(/\s+/g, '');
     });
 
-    document.querySelectorAll('[data-demo-user]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        usernameInput.value = btn.getAttribute('data-demo-user');
-        passwordInput.value = 'demo1234';
-        showError('');
-      });
-    });
-
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       showError('');
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Logging in...';
+      submitBtn.textContent = 'Please wait...';
 
       try {
         await api.auth.login({
@@ -104,7 +92,6 @@ async function initAuthPage() {
     const usernameInput = document.getElementById('reg-username');
     const passwordInput = document.getElementById('reg-password');
     const usernameHint = document.getElementById('username-hint');
-    const passwordHint = document.getElementById('password-hint');
     const submitBtn = document.getElementById('register-submit-btn');
 
     let usernameTaken = false;
@@ -125,14 +112,14 @@ async function initAuthPage() {
       if (!/^[a-z0-9_]{3,24}$/.test(cleaned)) {
         usernameHint.classList.remove('hidden', 'ok', 'muted');
         usernameHint.classList.add('error');
-        usernameHint.textContent = 'Use 3–24 lowercase letters, numbers, or underscores.';
+        usernameHint.textContent = 'Use 3–24 letters, numbers, or _';
         usernameTaken = false;
         return;
       }
 
       usernameHint.classList.remove('hidden', 'ok', 'error');
       usernameHint.classList.add('muted');
-      usernameHint.textContent = 'Checking availability...';
+      usernameHint.textContent = 'Checking...';
 
       checkTimer = setTimeout(async () => {
         try {
@@ -141,32 +128,17 @@ async function initAuthPage() {
             usernameTaken = false;
             usernameHint.classList.remove('muted', 'error');
             usernameHint.classList.add('ok');
-            usernameHint.textContent = `@${res.username} is available!`;
+            usernameHint.textContent = `@${res.username} is available`;
           } else {
             usernameTaken = true;
             usernameHint.classList.remove('muted', 'ok');
             usernameHint.classList.add('error');
-            usernameHint.textContent = `@${res.username} is already taken.`;
+            usernameHint.textContent = `@${res.username} taken`;
           }
         } catch {
           usernameHint.classList.add('hidden');
         }
       }, 280);
-    });
-
-    passwordInput.addEventListener('input', () => {
-      const len = passwordInput.value.length;
-      if (len === 0) {
-        passwordHint.className = 'field-hint muted';
-        passwordHint.textContent = 'Minimum 6 characters required.';
-      } else if (len >= 6) {
-        passwordHint.className = 'field-hint ok';
-        passwordHint.textContent = 'Password length looks good.';
-      } else {
-        const left = 6 - len;
-        passwordHint.className = 'field-hint error';
-        passwordHint.textContent = `${left} more character${left === 1 ? '' : 's'} needed.`;
-      }
     });
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -182,26 +154,26 @@ async function initAuthPage() {
         return;
       }
       if (!/^[a-z0-9_]{3,24}$/.test(username)) {
-        showError('Please choose a valid username (3–24 letters, numbers, or underscores).');
+        showError('Username must be 3-24 characters.');
         return;
       }
       if (usernameTaken) {
-        showError('That username is already taken.');
+        showError('Username already taken.');
         return;
       }
       if (password.length < 6) {
-        showError('Password must be at least 6 characters.');
+        showError('Password min 6 characters.');
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account...';
+      submitBtn.textContent = 'Please wait...';
 
       try {
         await api.auth.register({ name, username, password });
         redirectAfterAuth();
       } catch (err) {
-        showError(err instanceof ApiError ? err.message : 'Could not create your account.');
+        showError(err instanceof ApiError ? err.message : 'Registration failed.');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Register';
       }
