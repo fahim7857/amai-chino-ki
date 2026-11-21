@@ -180,10 +180,25 @@
   flex-shrink: 0;
 }
 
-.rank-1 { background-color: var(--bg-cream-warm); color: #8B5313; }
-.rank-2 { background-color: var(--bg-lavender); color: #53309A; }
-.rank-3 { background-color: var(--bg-pink); color: #8E3548; }
-.rank-other { background-color: var(--bg-lavender-soft); color: var(--text-muted); }
+.rank-1 {
+  background-color: var(--bg-cream-warm);
+  color: #8B5313;
+}
+
+.rank-2 {
+  background-color: var(--bg-lavender);
+  color: #53309A;
+}
+
+.rank-3 {
+  background-color: var(--bg-pink);
+  color: #8E3548;
+}
+
+.rank-other {
+  background-color: var(--bg-lavender-soft);
+  color: var(--text-muted);
+}
 
 .empty-state {
   padding: 2.25rem 1rem;
@@ -229,4 +244,162 @@
   background-color: #FFFFFF;
   color: var(--primary-lilac);
   box-shadow: 0 2px 6px rgba(52, 49, 61, 0.06);
+}
+
+/* =========================================================
+   RESPONSIVE (added)
+   ========================================================= */
+
+/* Prevent grid/flex children from forcing horizontal overflow */
+.dashboard-top-grid>*,
+.stats-strip>*,
+.dashboard-lists-grid>*,
+.welcome-card>*,
+.best-friend-card>*,
+.profile-header>*,
+.best-friend-body>*,
+.card-header-row>* {
+  min-width: 0;
+}
+
+.share-url-display {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.list-row-left>*:not(.rank-badge) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-title,
+.dashboard-heading {
+  overflow-wrap: anywhere;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-heading {
+    font-size: 1.65rem;
+  }
+}
+
+/* Large phones / small tablets */
+@media (max-width: 768px) {
+
+  .dashboard-top-grid,
+  .stats-strip,
+  .dashboard-lists-grid {
+    gap: 1rem;
+  }
+
+  .stats-strip,
+  .dashboard-lists-grid {
+    margin-top: 1.25rem;
+  }
+
+  .dashboard-lists-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-heading {
+    font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .best-friend-score {
+    font-size: 1.25rem;
+  }
+
+  .share-actions .ml-auto {
+    margin-left: 0;
+  }
+
+  .segmented-control {
+    display: flex;
+    width: 100%;
+  }
+
+  .segment-btn {
+    flex: 1 1 0;
+    padding: 0.35rem 0.5rem;
+  }
+}
+
+/* Phones */
+@media (max-width: 520px) {
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-card {
+    gap: 1rem;
+  }
+
+  .profile-header {
+    gap: 0.75rem;
+  }
+
+  .share-box {
+    padding: 0.85rem;
+  }
+
+  .share-box-header {
+    flex-wrap: wrap;
+  }
+
+  .share-actions {
+    gap: 0.5rem;
+  }
+
+  .share-actions>* {
+    flex: 1 1 calc(50% - 0.5rem);
+    text-align: center;
+    justify-content: center;
+  }
+
+  .best-friend-body {
+    gap: 0.75rem;
+  }
+
+  .card-header-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .list-row {
+    padding: 0.75rem 0;
+    gap: 0.5rem;
+  }
+
+  .list-row-left {
+    gap: 0.5rem;
+  }
+
+  .empty-state {
+    padding: 1.5rem 0.75rem;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .dashboard-heading {
+    font-size: 1.3rem;
+  }
+
+  .share-actions>* {
+    flex: 1 1 100%;
+  }
+
+  .profile-header {
+    flex-wrap: wrap;
+  }
 }
