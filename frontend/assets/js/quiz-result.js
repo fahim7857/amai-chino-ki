@@ -42,8 +42,8 @@ async function initQuizResult() {
       <div style="display: flex; flex-direction: column; gap: 1.25rem;">
         <div class="card result-card" style="text-align: center;">
           <div class="avatar-overlap" style="justify-content: center;">
-            ${renderAvatar(result.participant.name, 'lg', 'pink')}
-            ${renderAvatar(result.owner.name, 'lg', 'lavender')}
+            ${renderAvatar(result.participant.name, 'lg', 'pink', result.participant.avatarUrl)}
+            ${renderAvatar(result.owner.name, 'lg', 'lavender', result.owner.avatarUrl)}
           </div>
 
           <p class="meta-line" style="margin-top: 1rem;">

@@ -128,7 +128,7 @@ async function initQuizBuilder() {
   }
 
   function validateEditor() {
-    if (state.questionText.trim().length < 2) {
+    if (state.questionText.trim().length < 1) {
       return 'Please enter a question.';
     }
     if (state.options.length < 4 || state.options.length > 5) {
@@ -172,12 +172,26 @@ async function initQuizBuilder() {
         </div>
 
         <div>
-          <label for="q-text" class="form-label-sm">Question</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.25rem;">
+            <label for="q-text" class="form-label-sm" style="margin: 0;">Question (Emojis & Symbols Allowed ✨)</label>
+            <div class="emoji-toolbar" id="emoji-toolbar">
+              <button type="button" class="btn-emoji" data-emoji="😊" title="Smile">😊</button>
+              <button type="button" class="btn-emoji" data-emoji="😂" title="Laugh">😂</button>
+              <button type="button" class="btn-emoji" data-emoji="❤️" title="Heart">❤️</button>
+              <button type="button" class="btn-emoji" data-emoji="🔥" title="Fire">🔥</button>
+              <button type="button" class="btn-emoji" data-emoji="✨" title="Sparkles">✨</button>
+              <button type="button" class="btn-emoji" data-emoji="🎉" title="Party">🎉</button>
+              <button type="button" class="btn-emoji" data-emoji="🍕" title="Pizza">🍕</button>
+              <button type="button" class="btn-emoji" data-emoji="⭐" title="Star">⭐</button>
+              <button type="button" class="btn-emoji" data-emoji="❓" title="Question">❓</button>
+              <button type="button" class="btn-emoji" data-emoji="🤔" title="Thinking">🤔</button>
+            </div>
+          </div>
           <input
             id="q-text"
             type="text"
             maxlength="280"
-            placeholder="Write question here..."
+            placeholder="Write question here (e.g. What is my favorite food? 🍕❤️)"
             value="${escapeHtml(state.questionText)}"
             class="form-input"
             required
@@ -452,6 +466,22 @@ async function initQuizBuilder() {
         persistDraft();
       });
     }
+
+    document.querySelectorAll('.btn-emoji').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const emoji = btn.getAttribute('data-emoji');
+        if (!emoji || !qInput) return;
+        const start = qInput.selectionStart ?? qInput.value.length;
+        const end = qInput.selectionEnd ?? qInput.value.length;
+        const val = qInput.value;
+        qInput.value = val.slice(0, start) + emoji + val.slice(end);
+        state.questionText = qInput.value;
+        persistDraft();
+        qInput.focus();
+        const nextPos = start + emoji.length;
+        qInput.setSelectionRange(nextPos, nextPos);
+      });
+    });
 
     const addOptBtn = document.getElementById('add-option-btn');
     if (addOptBtn) {

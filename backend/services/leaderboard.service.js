@@ -18,6 +18,7 @@ export function rankSubmissions(rows) {
       submissionId: row.submission_id,
       participantName: row.participant_name,
       participantUsername: row.participant_username,
+      participantAvatarUrl: row.participant_avatar_url || null,
       correctAnswers: row.correct_answers,
       totalQuestions: row.total_questions,
       matchPercentage: row.match_percentage,
@@ -53,6 +54,7 @@ export function getLeaderboardBySlug(db, slugOrUsername, viewerUserId) {
       `SELECT qs.id as submission_id,
               up.name as participant_name,
               up.username as participant_username,
+              up.avatar_url as participant_avatar_url,
               qs.correct_answers,
               qs.total_questions,
               qs.match_percentage,
@@ -82,7 +84,7 @@ export function getLeaderboardBySlug(db, slugOrUsername, viewerUserId) {
 export function getDashboardStats(db, userId) {
   const userProfile = db
     .prepare(
-      `SELECT up.name, up.username, COALESCE(us.leaderboard_visibility, 'public') as leaderboard_visibility
+      `SELECT up.name, up.username, up.avatar_url, COALESCE(us.leaderboard_visibility, 'public') as leaderboard_visibility
        FROM user_profiles up
        LEFT JOIN user_settings us ON us.user_id = up.user_id
        WHERE up.user_id = ?`
@@ -138,6 +140,7 @@ export function getDashboardStats(db, userId) {
         `SELECT qs.id as submission_id,
                 up.name as participant_name,
                 up.username as participant_username,
+                up.avatar_url as participant_avatar_url,
                 qs.correct_answers,
                 qs.total_questions,
                 qs.match_percentage,
@@ -158,6 +161,7 @@ export function getDashboardStats(db, userId) {
         `SELECT qs.id as submission_id,
                 up.name as participant_name,
                 up.username as participant_username,
+                up.avatar_url as participant_avatar_url,
                 qs.correct_answers,
                 qs.total_questions,
                 qs.match_percentage,
@@ -174,6 +178,7 @@ export function getDashboardStats(db, userId) {
       submissionId: r.submission_id,
       participantName: r.participant_name,
       participantUsername: r.participant_username,
+      participantAvatarUrl: r.participant_avatar_url || null,
       matchPercentage: r.match_percentage,
       correctAnswers: r.correct_answers,
       totalQuestions: r.total_questions,
@@ -185,7 +190,8 @@ export function getDashboardStats(db, userId) {
     .prepare(
       `SELECT qs.id as submission_id, qs.match_percentage, qs.correct_answers, qs.total_questions,
               qs.submitted_at, qz.title as quiz_title, qz.slug as quiz_slug,
-              owner_p.name as owner_name, owner_p.username as owner_username
+              owner_p.name as owner_name, owner_p.username as owner_username,
+              owner_p.avatar_url as owner_avatar_url
        FROM quiz_submissions qs
        JOIN quizzes qz ON qz.id = qs.quiz_id
        JOIN user_profiles owner_p ON owner_p.user_id = qz.user_id

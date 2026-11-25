@@ -20,7 +20,14 @@ export function getInitials(name) {
   );
 }
 
-export function renderAvatar(name, size = 'md', tone = 'lavender') {
+export function renderAvatar(name, size = 'md', tone = 'lavender', avatarUrl = null) {
+  if (avatarUrl) {
+    return `<div class="avatar avatar-${size} avatar-img-wrap" aria-hidden="true"><img src="${escapeHtml(
+      avatarUrl
+    )}" alt="${escapeHtml(name)}" class="avatar-img" onerror="this.style.display='none';this.parentElement.textContent='${escapeHtml(
+      getInitials(name)
+    )}'" /></div>`;
+  }
   return `<div class="avatar avatar-${size} avatar-${tone}" aria-hidden="true">${escapeHtml(
     getInitials(name)
   )}</div>`;

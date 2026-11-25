@@ -15,7 +15,7 @@ export function buildInternalAlias(username) {
   return `${normalized}@${AUTH_ALIAS_DOMAIN}`;
 }
 
-export async function registerWithSupabaseAuth(username, name, password) {
+export async function registerWithSupabaseAuth(username, name, password, avatarUrl = null) {
   const email = buildInternalAlias(username);
   const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: 'POST',
@@ -28,7 +28,7 @@ export async function registerWithSupabaseAuth(username, name, password) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, username },
+      user_metadata: { name, username, avatar_url: avatarUrl },
     }),
   });
 
@@ -37,6 +37,7 @@ export async function registerWithSupabaseAuth(username, name, password) {
     throw new Error(data.msg || data.error_description || 'Supabase registration failed');
   }
 
+  // Insert or update public.profiles table in Supabase
   await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
     method: 'POST',
     headers: {
@@ -49,6 +50,7 @@ export async function registerWithSupabaseAuth(username, name, password) {
       id: data.id,
       name,
       username,
+      avatar_url: avatarUrl || null,
     }),
   }).catch(() => {});
 
@@ -75,5 +77,67 @@ export async function loginWithSupabaseAuth(username, password) {
     return null;
   }
 
-  return { supabaseUserId: data.user.id };
+  return { supabaseUserId: data.user.id, user: data.user };
+}
+
+export async function getSupabaseProfile(supabaseUserId) {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${supabaseUserId}&select=*`, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getSupabaseProfileByUsername(username) {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const normalized = username.trim().toLowerCase();
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(normalized)}&select=*`,
+      {
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateSupabaseProfile(supabaseUserId, updates) {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${supabaseUserId}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data[0] : data;
+  } catch {
+    return null;
+  }
 }

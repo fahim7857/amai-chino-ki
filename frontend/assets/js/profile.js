@@ -85,10 +85,21 @@ async function initProfile() {
           <!-- User Info -->
           <section class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div class="profile-header">
-              ${renderAvatar(user.name, 'lg', 'lavender')}
+              <div style="position: relative; display: inline-block;">
+                <div id="avatar-container">
+                  ${renderAvatar(user.name, 'lg', 'lavender', user.avatarUrl)}
+                </div>
+                <label for="avatar-file-input" class="avatar-upload-badge" title="Upload new photo" aria-label="Upload photo">
+                  📷
+                </label>
+                <input type="file" id="avatar-file-input" accept="image/*" style="display: none;" />
+              </div>
               <div>
                 <h1 style="font-size: 1.35rem; font-weight: 800;">${escapeHtml(user.name)}</h1>
                 <p class="meta-line">@${escapeHtml(user.username)}</p>
+                <button type="button" id="change-photo-btn" class="btn btn-sm btn-outline-soft" style="margin-top: 0.5rem; font-size: 0.8rem; padding: 0.25rem 0.65rem;">
+                  📷 Change Photo
+                </button>
               </div>
             </div>
 
@@ -121,6 +132,43 @@ async function initProfile() {
           </section>
         </div>
       `;
+
+      const fileInput = document.getElementById('avatar-file-input');
+      const changeBtn = document.getElementById('change-photo-btn');
+      if (fileInput) {
+        if (changeBtn) {
+          changeBtn.addEventListener('click', () => fileInput.click());
+        }
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          if (!file.type.startsWith('image/')) {
+            showToast('error', 'Please select a valid image file.');
+            return;
+          }
+
+          if (file.size > 5 * 1024 * 1024) {
+            showToast('error', 'Image size must be less than 5MB.');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = async () => {
+            const base64Data = reader.result;
+            showToast('info', 'Uploading to Cloudinary... ⏳');
+            try {
+              const res = await api.auth.uploadProfilePicture(base64Data);
+              user.avatarUrl = res.avatarUrl;
+              showToast('success', 'Profile picture updated! 📸');
+              await loadAndRender();
+            } catch (err) {
+              showToast('error', err instanceof ApiError ? err.message : 'Upload failed. Check Cloudinary credentials.');
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      }
 
       document.querySelectorAll('[data-vis]').forEach((btn) => {
         btn.addEventListener('click', async () => {

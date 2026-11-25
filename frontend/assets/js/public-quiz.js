@@ -50,7 +50,7 @@ async function initPublicQuiz() {
       <div class="card">
         <div class="card-header-row">
           <div class="profile-header" style="min-width: 0;">
-            ${renderAvatar(qz.owner.name, 'md', 'lavender')}
+            ${renderAvatar(qz.owner.name, 'md', 'lavender', qz.owner.avatarUrl)}
             <div style="min-width: 0;">
               <p class="meta-line truncate">@${escapeHtml(qz.owner.username)}</p>
               <h1 style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;">${escapeHtml(

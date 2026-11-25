@@ -3,6 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import {
   buildInternalAlias,
+  getSupabaseProfile,
+  getSupabaseProfileByUsername,
   isSupabaseConfigured,
   loginWithSupabaseAuth,
   registerWithSupabaseAuth,
@@ -44,26 +46,6 @@ function getSessionSecret() {
     cachedSecret = crypto.randomBytes(32).toString('hex');
     return cachedSecret;
   }
-}
-
-export function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${derived}`;
-}
-
-export function verifyPassword(password, storedHash) {
-  const parts = storedHash.split(':');
-  if (parts.length !== 2) {
-    return false;
-  }
-  const [salt, expectedHex] = parts;
-  const expectedBuf = Buffer.from(expectedHex, 'hex');
-  const actualBuf = crypto.scryptSync(password, salt, 64);
-  if (expectedBuf.length !== actualBuf.length) {
-    return false;
-  }
-  return crypto.timingSafeEqual(expectedBuf, actualBuf);
 }
 
 export function signSessionToken(userId, supabaseUserId) {
@@ -117,8 +99,18 @@ export function getSessionCookieName() {
   return SESSION_COOKIE_NAME;
 }
 
-export function isUsernameAvailable(db, rawUsername) {
+export async function isUsernameAvailable(db, rawUsername) {
   const username = normalizeUsername(rawUsername);
+
+  // Check Supabase profiles table
+  if (isSupabaseConfigured()) {
+    const sbProfile = await getSupabaseProfileByUsername(username);
+    if (sbProfile) {
+      return { available: false, username };
+    }
+  }
+
+  // Check local SQLite
   const existing = db
     .prepare('SELECT user_id FROM user_profiles WHERE username = ?')
     .get(username);
@@ -129,7 +121,17 @@ export async function registerUser(db, input) {
   const name = validateName(input.name);
   const username = normalizeUsername(input.username);
   const password = validatePassword(input.password);
+  const avatarUrl = typeof input.avatar_url === 'string' ? input.avatar_url.trim() : null;
 
+  // Verify username in Supabase
+  if (isSupabaseConfigured()) {
+    const sbProfile = await getSupabaseProfileByUsername(username);
+    if (sbProfile) {
+      throw new ConflictError('That username is already taken. Try another one!');
+    }
+  }
+
+  // Verify username in local SQLite
   const existing = db
     .prepare('SELECT user_id FROM user_profiles WHERE username = ?')
     .get(username);
@@ -137,39 +139,41 @@ export async function registerUser(db, input) {
     throw new ConflictError('That username is already taken. Try another one!');
   }
 
-  const internalAlias = buildInternalAlias(username);
   let supabaseUserId;
-  let storedPasswordHash = null;
-
   if (isSupabaseConfigured()) {
-    const sb = await registerWithSupabaseAuth(username, name, password);
+    // Save user credentials (name, username, password) strictly in Supabase
+    const sb = await registerWithSupabaseAuth(username, name, password, avatarUrl);
     supabaseUserId = sb.supabaseUserId;
   } else {
     supabaseUserId = crypto.randomUUID();
-    storedPasswordHash = hashPassword(password);
   }
 
+  // Link user in SQLite for quizzes & submissions without saving any password
   const createLocalUser = db.transaction(() => {
-    const userRes = db
-      .prepare('INSERT INTO users (supabase_user_id) VALUES (?)')
-      .run(supabaseUserId);
-    const userId = Number(userRes.lastInsertRowid);
-
-    db.prepare('INSERT INTO user_profiles (user_id, name, username) VALUES (?, ?, ?)').run(
-      userId,
-      name,
-      username
-    );
-
-    if (storedPasswordHash) {
+    let existingUser = db.prepare('SELECT id FROM users WHERE supabase_user_id = ?').get(supabaseUserId);
+    let userId;
+    if (existingUser) {
+      userId = existingUser.id;
       db.prepare(
-        'INSERT INTO auth_identities (user_id, internal_alias, password_hash) VALUES (?, ?, ?)'
-      ).run(userId, internalAlias, storedPasswordHash);
-    }
+        'UPDATE user_profiles SET name = ?, username = ?, avatar_url = COALESCE(?, avatar_url), updated_at = strftime(\'%Y-%m-%dT%H:%M:%fZ\', \'now\') WHERE user_id = ?'
+      ).run(name, username, avatarUrl, userId);
+    } else {
+      const userRes = db
+        .prepare('INSERT INTO users (supabase_user_id) VALUES (?)')
+        .run(supabaseUserId);
+      userId = Number(userRes.lastInsertRowid);
 
-    db.prepare("INSERT INTO user_settings (user_id, leaderboard_visibility) VALUES (?, 'public')").run(
-      userId
-    );
+      db.prepare('INSERT INTO user_profiles (user_id, name, username, avatar_url) VALUES (?, ?, ?, ?)').run(
+        userId,
+        name,
+        username,
+        avatarUrl
+      );
+
+      db.prepare("INSERT INTO user_settings (user_id, leaderboard_visibility) VALUES (?, 'public')").run(
+        userId
+      );
+    }
 
     return userId;
   });
@@ -198,41 +202,65 @@ export async function loginUser(db, input) {
   const username = normalizeUsername(input.username);
   const password = validatePassword(input.password);
 
-  const profile = db
-    .prepare(
-      `SELECT u.id, u.supabase_user_id, u.created_at, up.name, up.username
-       FROM user_profiles up
-       JOIN users u ON u.id = up.user_id
-       WHERE up.username = ?`
-    )
-    .get(username);
-
-  if (!profile) {
-    throw new UnauthorizedError('Invalid username or password.');
-  }
+  let supabaseUserId = null;
+  let profile = null;
 
   if (isSupabaseConfigured()) {
+    // Authenticate password strictly via Supabase Auth
     const sb = await loginWithSupabaseAuth(username, password);
-    if (!sb) {
+    if (!sb || !sb.supabaseUserId) {
       throw new UnauthorizedError('Invalid username or password.');
     }
+    supabaseUserId = sb.supabaseUserId;
+    profile = await getSupabaseProfile(supabaseUserId);
   } else {
-    const identity = db
-      .prepare('SELECT password_hash FROM auth_identities WHERE user_id = ?')
-      .get(profile.id);
-
-    if (!identity || !verifyPassword(password, identity.password_hash)) {
+    // If Supabase is not configured, lookup local profile
+    const localProfile = db
+      .prepare(
+        `SELECT u.id, u.supabase_user_id, u.created_at, up.name, up.username, up.avatar_url
+         FROM user_profiles up
+         JOIN users u ON u.id = up.user_id
+         WHERE up.username = ?`
+      )
+      .get(username);
+    if (!localProfile) {
       throw new UnauthorizedError('Invalid username or password.');
     }
+    supabaseUserId = localProfile.supabase_user_id;
+    profile = {
+      name: localProfile.name,
+      username: localProfile.username,
+      avatar_url: localProfile.avatar_url,
+    };
   }
 
-  const user = {
-    id: profile.id,
-    supabaseUserId: profile.supabase_user_id,
-    name: profile.name,
-    username: profile.username,
-    createdAt: profile.created_at,
-  };
+  const name = profile?.name || username;
+  const avatarUrl = profile?.avatar_url || null;
+
+  // Synchronize local SQLite user and user_profiles record
+  let localUser = db.prepare('SELECT id FROM users WHERE supabase_user_id = ?').get(supabaseUserId);
+  let userId;
+  if (!localUser) {
+    const insertRes = db.prepare('INSERT INTO users (supabase_user_id) VALUES (?)').run(supabaseUserId);
+    userId = Number(insertRes.lastInsertRowid);
+    db.prepare('INSERT INTO user_profiles (user_id, name, username, avatar_url) VALUES (?, ?, ?, ?)').run(
+      userId,
+      name,
+      username,
+      avatarUrl
+    );
+    db.prepare("INSERT INTO user_settings (user_id, leaderboard_visibility) VALUES (?, 'public')").run(userId);
+  } else {
+    userId = localUser.id;
+    db.prepare(
+      'UPDATE user_profiles SET name = ?, username = ?, avatar_url = COALESCE(?, avatar_url), updated_at = strftime(\'%Y-%m-%dT%H:%M:%fZ\', \'now\') WHERE user_id = ?'
+    ).run(name, username, avatarUrl, userId);
+  }
+
+  const user = getUserById(db, userId);
+  if (!user) {
+    throw new UnauthorizedError('Invalid username or password.');
+  }
 
   const token = signSessionToken(user.id, user.supabaseUserId);
   return { user, token };
@@ -241,7 +269,7 @@ export async function loginUser(db, input) {
 export function getUserById(db, userId) {
   const row = db
     .prepare(
-      `SELECT u.id, u.supabase_user_id, u.created_at, up.name, up.username
+      `SELECT u.id, u.supabase_user_id, u.created_at, up.name, up.username, up.avatar_url
        FROM users u
        JOIN user_profiles up ON up.user_id = u.id
        WHERE u.id = ?`
@@ -257,6 +285,7 @@ export function getUserById(db, userId) {
     supabaseUserId: row.supabase_user_id,
     name: row.name,
     username: row.username,
+    avatarUrl: row.avatar_url || null,
     createdAt: row.created_at,
   };
 }

@@ -1,5 +1,6 @@
 -- Complete Executable SQLite Schema for Who Knows Me Better?
--- Combines schema tables, constraints, indexes, and triggers.
+-- Questions, quizzes, options, and submissions are stored here in SQLite.
+-- User credentials (name, username, password) and profile pictures are authenticated & stored in Supabase & Cloudinary.
 
 PRAGMA foreign_keys = ON;
 
@@ -13,16 +14,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   user_id INTEGER PRIMARY KEY,
   name TEXT NOT NULL CHECK (length(trim(name)) >= 1 AND length(name) <= 80),
   username TEXT UNIQUE NOT NULL CHECK (length(username) >= 3 AND length(username) <= 24),
+  avatar_url TEXT DEFAULT NULL,
   created_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS auth_identities (
-  user_id INTEGER PRIMARY KEY,
-  internal_alias TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

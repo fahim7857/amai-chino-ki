@@ -145,8 +145,8 @@ export function getSubmissionResult(db, submissionId, viewerUserId) {
       `SELECT qs.id, qs.quiz_id, qs.quiz_version_id, qs.participant_user_id,
               qs.total_questions, qs.correct_answers, qs.match_percentage, qs.submitted_at,
               qz.title as quiz_title, qz.slug as quiz_slug, qz.user_id as owner_user_id,
-              owner_p.name as owner_name, owner_p.username as owner_username,
-              part_p.name as participant_name, part_p.username as participant_username
+              owner_p.name as owner_name, owner_p.username as owner_username, owner_p.avatar_url as owner_avatar_url,
+              part_p.name as participant_name, part_p.username as participant_username, part_p.avatar_url as participant_avatar_url
        FROM quiz_submissions qs
        JOIN quizzes qz ON qz.id = qs.quiz_id
        JOIN user_profiles owner_p ON owner_p.user_id = qz.user_id
@@ -176,10 +176,12 @@ export function getSubmissionResult(db, submissionId, viewerUserId) {
     owner: {
       name: row.owner_name,
       username: row.owner_username,
+      avatarUrl: row.owner_avatar_url || null,
     },
     participant: {
       name: row.participant_name,
       username: row.participant_username,
+      avatarUrl: row.participant_avatar_url || null,
     },
     totalQuestions: row.total_questions,
     correctAnswers: row.correct_answers,

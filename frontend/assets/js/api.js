@@ -46,6 +46,11 @@ export const api = {
       request('/api/auth/logout', {
         method: 'POST',
       }),
+    uploadProfilePicture: (image) =>
+      request('/api/auth/profile-picture', {
+        method: 'POST',
+        body: JSON.stringify({ image }),
+      }),
   },
   quizzes: {
     listMy: () => request('/api/quizzes/my'),

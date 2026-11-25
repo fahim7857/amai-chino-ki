@@ -40,7 +40,7 @@ async function initDashboard() {
     const bestFriendHtml = data.bestFriend
       ? `
         <div class="best-friend-body">
-          ${renderAvatar(data.bestFriend.participantName, 'lg', 'cream')}
+          ${renderAvatar(data.bestFriend.participantName, 'lg', 'cream', data.bestFriend.participantAvatarUrl)}
           <div style="min-width: 0;">
             <h2 class="truncate" style="font-size: 1.15rem; font-weight: 800;">${escapeHtml(
               data.bestFriend.participantName
@@ -66,7 +66,7 @@ async function initDashboard() {
               (p) => `
               <div class="list-row">
                 <div class="list-row-left">
-                  ${renderAvatar(p.participantName, 'sm', 'mint')}
+                  ${renderAvatar(p.participantName, 'sm', 'mint', p.participantAvatarUrl)}
                   <div style="min-width: 0;">
                     <p class="truncate" style="font-size: 0.85rem; font-weight: 700;">${escapeHtml(
                       p.participantName
@@ -153,7 +153,7 @@ async function initDashboard() {
       <section class="dashboard-top-grid">
         <div class="card welcome-card">
           <div class="profile-header">
-            ${renderAvatar(user.name, 'lg', 'lavender')}
+            ${renderAvatar(user.name, 'lg', 'lavender', user.avatarUrl)}
             <div>
               <p class="meta-line">@${escapeHtml(user.username)}</p>
               <h1 class="dashboard-heading">Hey, ${escapeHtml(firstName)}! 👋</h1>

@@ -98,7 +98,7 @@ async function initLeaderboard() {
               <span class="meta-line tabular-nums">${entry.correctAnswers}/${entry.totalQuestions}</span>
             </div>
             <div class="profile-header" style="margin-top: 0.75rem;">
-              ${renderAvatar(entry.participantName, 'md', avatarTone)}
+              ${renderAvatar(entry.participantName, 'md', avatarTone, entry.participantAvatarUrl)}
               <div style="min-width: 0;">
                 <p class="truncate" style="font-size: 0.95rem; font-weight: 800;">${escapeHtml(
                   entry.participantName
@@ -122,7 +122,7 @@ async function initLeaderboard() {
             <td class="tabular-nums" style="font-weight: 800; white-space: nowrap;">#${entry.rank}</td>
             <td>
               <div class="list-row-left">
-                ${renderAvatar(entry.participantName, 'sm', 'lavender')}
+                ${renderAvatar(entry.participantName, 'sm', 'lavender', entry.participantAvatarUrl)}
                 <div style="min-width: 0;">
                   <p class="truncate" style="font-weight: 700; font-size: 0.9rem;">
                     ${escapeHtml(entry.participantName)}${isMe ? ' (You)' : ''}

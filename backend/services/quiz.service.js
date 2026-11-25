@@ -519,7 +519,7 @@ export function resolvePublishedQuizBySlugOrUsername(db, slugOrUsername) {
   let quiz = db
     .prepare(
       `SELECT q.id as quiz_id, q.user_id as owner_user_id, q.title, q.slug, q.description,
-              up.name as owner_name, up.username as owner_username
+              up.name as owner_name, up.username as owner_username, up.avatar_url as owner_avatar_url
        FROM quizzes q
        JOIN user_profiles up ON up.user_id = q.user_id
        WHERE q.slug = ? AND q.status = 'published'
@@ -531,7 +531,7 @@ export function resolvePublishedQuizBySlugOrUsername(db, slugOrUsername) {
     quiz = db
       .prepare(
         `SELECT q.id as quiz_id, q.user_id as owner_user_id, q.title, q.slug, q.description,
-                up.name as owner_name, up.username as owner_username
+                up.name as owner_name, up.username as owner_username, up.avatar_url as owner_avatar_url
          FROM quizzes q
          JOIN user_profiles up ON up.user_id = q.user_id
          WHERE up.username = ? AND q.status = 'published'
@@ -565,6 +565,7 @@ export function resolvePublishedQuizBySlugOrUsername(db, slugOrUsername) {
     ownerUserId: quiz.owner_user_id,
     ownerName: quiz.owner_name,
     ownerUsername: quiz.owner_username,
+    ownerAvatarUrl: quiz.owner_avatar_url || null,
     title: quiz.title,
     slug: quiz.slug,
     description: quiz.description || '',
@@ -600,6 +601,7 @@ export function getPublicQuiz(db, slugOrUsername, viewerUserId) {
     owner: {
       name: resolved.ownerName,
       username: resolved.ownerUsername,
+      avatarUrl: resolved.ownerAvatarUrl || null,
     },
     participantCount: participantCountRow.cnt,
     isOwner: viewerUserId ? resolved.ownerUserId === viewerUserId : false,
@@ -612,7 +614,7 @@ export function getPublicUserProfile(db, rawUsername) {
   const username = rawUsername.trim().toLowerCase();
   const profile = db
     .prepare(
-      `SELECT u.id, up.name, up.username, u.created_at,
+      `SELECT u.id, up.name, up.username, up.avatar_url, u.created_at,
               COALESCE(us.leaderboard_visibility, 'public') as leaderboard_visibility
        FROM user_profiles up
        JOIN users u ON u.id = up.user_id
@@ -639,6 +641,7 @@ export function getPublicUserProfile(db, rawUsername) {
   return {
     name: profile.name,
     username: profile.username,
+    avatarUrl: profile.avatar_url || null,
     createdAt: profile.created_at,
     leaderboardVisibility: profile.leaderboard_visibility,
     quizzes,

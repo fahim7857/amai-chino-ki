@@ -1,5 +1,6 @@
 import { AppError } from './errors.js';
 
+// Username: ONLY lowercase letters, numbers, and underscores (NO emojis, NO symbols)
 export const USERNAME_REGEX = /^[a-z0-9_]{3,24}$/;
 
 export const QUESTION_CATEGORIES = [
@@ -27,7 +28,7 @@ export function normalizeUsername(raw) {
   const normalized = raw.trim().toLowerCase();
   if (!USERNAME_REGEX.test(normalized)) {
     throw new AppError(
-      'Username must be 3–24 characters using only lowercase letters, numbers, or underscores.',
+      'Username must be 3–24 characters using only lowercase letters, numbers, or underscores (no emojis or symbols allowed).',
       400,
       'INVALID_USERNAME'
     );
@@ -61,9 +62,10 @@ export function validateQuestionPayload(body) {
     throw new AppError('Question payload is required.', 400, 'INVALID_QUESTION');
   }
 
+  // Question text supports any unicode character including emojis and special symbols
   const rawText = typeof body.question_text === 'string' ? body.question_text.trim() : '';
-  if (rawText.length < 3 || rawText.length > 280) {
-    throw new AppError('Question text must be between 3 and 280 characters.', 400, 'INVALID_QUESTION');
+  if (rawText.length < 1 || rawText.length > 280) {
+    throw new AppError('Question text must be between 1 and 280 characters.', 400, 'INVALID_QUESTION');
   }
 
   const rawCategory =
