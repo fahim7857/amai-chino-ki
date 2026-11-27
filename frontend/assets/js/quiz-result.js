@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import {
+  BASE_PATH,
   copyToClipboard,
   escapeHtml,
   getRouteSegment,
@@ -23,7 +24,7 @@ async function initQuizResult() {
     root.innerHTML = `
       <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
         <h1 style="font-size: 1.35rem; font-weight: 800;">Result Not Found</h1>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
+        <a href="${BASE_PATH}/" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
     return;
@@ -32,7 +33,7 @@ async function initQuizResult() {
   try {
     const res = await api.public.getSubmission(subId);
     const result = res.result;
-    const quizShareUrl = `${window.location.origin}/quiz/${result.quizSlug}`;
+    const quizShareUrl = `${window.location.origin}${BASE_PATH}/quiz/${result.quizSlug}`;
 
     const formattedPct = Number.isInteger(result.matchPercentage)
       ? result.matchPercentage
@@ -59,10 +60,10 @@ async function initQuizResult() {
           </p>
 
           <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-            <a href="/leaderboard/${encodeURIComponent(result.quizSlug)}" class="btn btn-primary">
+            <a href="${BASE_PATH}/leaderboard/${encodeURIComponent(result.quizSlug)}" class="btn btn-primary">
               🏆 Leaderboard
             </a>
-            <a href="/quiz" class="btn btn-outline-soft">✏️ Make Quiz</a>
+            <a href="${BASE_PATH}/quiz" class="btn btn-outline-soft">✏️ Make Quiz</a>
             <button type="button" id="share-result-btn" class="btn btn-pink">📤 Share</button>
           </div>
         </div>
@@ -80,7 +81,7 @@ async function initQuizResult() {
     root.innerHTML = `
       <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
         <h1 style="font-size: 1.35rem; font-weight: 800;">Result Not Found</h1>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
+        <a href="${BASE_PATH}/" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
   }

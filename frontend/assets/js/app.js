@@ -1,4 +1,4 @@
-import { getCurrentUser, renderNavbar } from './ui.js';
+import { BASE_PATH, getCurrentUser, renderNavbar } from './ui.js';
 
 async function initLandingPage() {
   const user = await getCurrentUser();
@@ -10,15 +10,15 @@ async function initLandingPage() {
 
   if (user) {
     if (primaryCta) {
-      primaryCta.href = '/create-quiz';
+      primaryCta.href = `${BASE_PATH}/create-quiz`;
       primaryCta.querySelector('span').textContent = 'Open Quiz Builder';
     }
     if (secondaryCta) {
-      secondaryCta.href = '/dashboard';
+      secondaryCta.href = `${BASE_PATH}/`;
       secondaryCta.textContent = 'Go to Dashboard';
     }
     if (footerLink) {
-      footerLink.href = '/dashboard';
+      footerLink.href = `${BASE_PATH}/`;
       footerLink.textContent = 'Dashboard';
     }
   }

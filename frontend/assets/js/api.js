@@ -6,8 +6,15 @@ export class ApiError extends Error {
   }
 }
 
+const BASE_PATH = '/bondhu';
+
+function withBase(url) {
+  if (url.startsWith(BASE_PATH + '/') || url === BASE_PATH) return url;
+  return url.startsWith('/') ? `${BASE_PATH}${url}` : url;
+}
+
 async function request(url, options = {}) {
-  const res = await fetch(url, {
+  const res = await fetch(withBase(url), {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',

@@ -1,5 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function runMigrations(db) {
   db.exec(`
@@ -9,7 +13,7 @@ export function runMigrations(db) {
     );
   `);
 
-  const migrationsDir = path.resolve(process.cwd(), 'backend', 'database', 'migrations');
+  const migrationsDir = path.resolve(__dirname, 'migrations');
   if (!fs.existsSync(migrationsDir)) {
     return [];
   }

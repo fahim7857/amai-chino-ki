@@ -1,5 +1,6 @@
 import { api, ApiError } from './api.js';
 import {
+  BASE_PATH,
   escapeHtml,
   getCurrentUser,
   getRouteSegment,
@@ -54,7 +55,7 @@ async function initLeaderboard() {
         </div>
         ${
           !isOwner
-            ? `<a href="/quiz/${encodeURIComponent(
+            ? `<a href="${BASE_PATH}/quiz/${encodeURIComponent(
                 data.quiz.slug
               )}" class="btn btn-primary">🎮 Play Quiz</a>`
             : ''
@@ -70,7 +71,7 @@ async function initLeaderboard() {
             <h2 style="font-size: 1.15rem; font-weight: 700;">No scores yet</h2>
             ${
               !isOwner
-                ? `<a href="/quiz/${encodeURIComponent(
+                ? `<a href="${BASE_PATH}/quiz/${encodeURIComponent(
                     data.quiz.slug
                   )}" class="btn btn-primary" style="margin-top: 1rem;">🎮 Play First!</a>`
                 : ''
@@ -169,7 +170,7 @@ async function initLeaderboard() {
       <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
         <h1 style="font-size: 1.35rem; font-weight: 800;">Not Found</h1>
         <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(msg)}</p>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
+        <a href="${BASE_PATH}/" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
   }
@@ -182,7 +183,7 @@ async function initLeaderboard() {
       e.preventDefault();
       const target = input.value.trim().toLowerCase().replace(/^@+/, '');
       if (!target) return;
-      window.location.href = `/leaderboard/${encodeURIComponent(target)}`;
+      window.location.href = `${BASE_PATH}/leaderboard/${encodeURIComponent(target)}`;
     });
   }
 }

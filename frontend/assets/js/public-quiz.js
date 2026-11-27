@@ -1,5 +1,6 @@
 import { api, ApiError } from './api.js';
 import {
+  BASE_PATH,
   copyToClipboard,
   escapeHtml,
   getCurrentUser,
@@ -35,7 +36,7 @@ async function initPublicQuiz() {
       <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
         <h1 style="font-size: 1.35rem; font-weight: 800;">Quiz Not Found</h1>
         <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(msg)}</p>
-        <a href="/dashboard" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
+        <a href="${BASE_PATH}/" class="btn btn-primary" style="margin-top: 1rem;">Dashboard</a>
       </div>
     `;
     return;
@@ -44,7 +45,7 @@ async function initPublicQuiz() {
   function render() {
     const qz = state.quiz;
     const total = qz.questions.length;
-    const redirectParam = encodeURIComponent(`/quiz/${qz.slug}`);
+    const redirectParam = encodeURIComponent(`${BASE_PATH}/quiz/${qz.slug}`);
 
     const introCardHtml = `
       <div class="card">
@@ -58,7 +59,7 @@ async function initPublicQuiz() {
               )}</h1>
             </div>
           </div>
-          <a href="/leaderboard/${encodeURIComponent(qz.slug)}" class="btn btn-sm btn-lavender">🏆 Leaderboard</a>
+          <a href="${BASE_PATH}/leaderboard/${encodeURIComponent(qz.slug)}" class="btn btn-sm btn-lavender">🏆 Leaderboard</a>
         </div>
       </div>
     `;
@@ -70,8 +71,8 @@ async function initPublicQuiz() {
         <div class="card-pink" style="text-align: center; padding: 2rem 1rem;">
           <h2 style="font-size: 1.25rem; font-weight: 800;">🔑 Login to Play</h2>
           <div style="margin-top: 1.25rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-            <a href="/login?redirect=${redirectParam}" class="btn btn-primary">Login</a>
-            <a href="/register?redirect=${redirectParam}" class="btn btn-outline-soft">Register</a>
+            <a href="${BASE_PATH}/login?redirect=${redirectParam}" class="btn btn-primary">Login</a>
+            <a href="${BASE_PATH}/register?redirect=${redirectParam}" class="btn btn-outline-soft">Register</a>
           </div>
         </div>
       `;
@@ -81,7 +82,7 @@ async function initPublicQuiz() {
           <h2 style="font-size: 1.25rem; font-weight: 800;">This is your quiz!</h2>
           <div style="margin-top: 1.25rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
             <button type="button" id="owner-copy-btn" class="btn btn-outline-soft">📋 Copy Link</button>
-            <a href="/create-quiz/${qz.id}" class="btn btn-primary">✏️ Edit</a>
+            <a href="${BASE_PATH}/create-quiz/${qz.id}" class="btn btn-primary">✏️ Edit</a>
           </div>
         </div>
       `;
@@ -92,8 +93,8 @@ async function initPublicQuiz() {
             Already played! ✅
           </h2>
           <div style="margin-top: 1.25rem; display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-            <a href="/quiz-result/${qz.existingSubmissionId}" class="btn btn-primary">Result</a>
-            <a href="/leaderboard/${encodeURIComponent(qz.slug)}" class="btn btn-outline-soft">🏆 Leaderboard</a>
+            <a href="${BASE_PATH}/quiz-result/${qz.existingSubmissionId}" class="btn btn-primary">Result</a>
+            <a href="${BASE_PATH}/leaderboard/${encodeURIComponent(qz.slug)}" class="btn btn-outline-soft">🏆 Leaderboard</a>
           </div>
         </div>
       `;
@@ -237,7 +238,7 @@ async function initPublicQuiz() {
 
           const res = await api.public.submitQuiz(qz.slug, payloadAnswers);
           showToast('success', 'Submitted! 🎉');
-          window.location.href = `/quiz-result/${res.submission.id}`;
+          window.location.href = `${BASE_PATH}/quiz-result/${res.submission.id}`;
         } catch (err) {
           showToast('error', err instanceof ApiError ? err.message : 'Submission failed.');
           state.submitting = false;

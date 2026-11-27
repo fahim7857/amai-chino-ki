@@ -1,5 +1,5 @@
 import { api, ApiError } from './api.js';
-import { getCurrentUser, getQueryParam, renderNavbar } from './ui.js';
+import { BASE_PATH, getCurrentUser, getQueryParam, renderNavbar } from './ui.js';
 
 const pageType = document.body.getAttribute('data-auth-page');
 const redirectParam = getQueryParam('redirect');
@@ -31,9 +31,12 @@ function wirePasswordToggle(inputId, btnId) {
 
 function redirectAfterAuth() {
   if (redirectParam && redirectParam.startsWith('/')) {
-    window.location.href = redirectParam;
+    const target = redirectParam.startsWith(BASE_PATH)
+      ? redirectParam
+      : `${BASE_PATH}${redirectParam}`;
+    window.location.href = target;
   } else {
-    window.location.href = '/dashboard';
+    window.location.href = `${BASE_PATH}/`;
   }
 }
 
@@ -49,7 +52,7 @@ async function initAuthPage() {
   if (pageType === 'login') {
     const switchLink = document.getElementById('switch-to-register');
     if (switchLink && redirectParam) {
-      switchLink.href = `/register?redirect=${encodeURIComponent(redirectParam)}`;
+      switchLink.href = `${BASE_PATH}/register?redirect=${encodeURIComponent(redirectParam)}`;
     }
 
     wirePasswordToggle('login-password', 'toggle-password-btn');
@@ -83,7 +86,7 @@ async function initAuthPage() {
   } else if (pageType === 'register') {
     const switchLink = document.getElementById('switch-to-login');
     if (switchLink && redirectParam) {
-      switchLink.href = `/login?redirect=${encodeURIComponent(redirectParam)}`;
+      switchLink.href = `${BASE_PATH}/login?redirect=${encodeURIComponent(redirectParam)}`;
     }
 
     wirePasswordToggle('reg-password', 'toggle-password-btn');

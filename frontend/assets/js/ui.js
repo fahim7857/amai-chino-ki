@@ -114,22 +114,28 @@ export function openConfirmModal({
   });
 }
 
+export const BASE_PATH = '/bondhu';
+
 export function renderNavbar(user, activePath = window.location.pathname) {
   const header = document.getElementById('app-header');
   const mobileNav = document.getElementById('mobile-nav');
   if (!header) return;
 
-  const isDashboard = activePath.startsWith('/dashboard');
-  const isQuiz = activePath.startsWith('/quiz') || activePath.startsWith('/create-quiz');
-  const isProfile = activePath.startsWith('/profile');
-  const isLeaderboard = activePath.startsWith('/leaderboard');
+  const cleanPath = activePath.startsWith(BASE_PATH)
+    ? activePath.slice(BASE_PATH.length) || '/'
+    : activePath;
+
+  const isDashboard = cleanPath === '/' || cleanPath.startsWith('/dashboard');
+  const isQuiz = cleanPath.startsWith('/quiz') || cleanPath.startsWith('/create-quiz');
+  const isProfile = cleanPath.startsWith('/profile');
+  const isLeaderboard = cleanPath.startsWith('/leaderboard');
 
   const navHtml = `
     <nav aria-label="Primary navigation" class="nav-links">
-      <a href="/dashboard" class="nav-link ${isDashboard ? 'active' : ''}">📊 Dashboard</a>
-      <a href="/quiz" class="nav-link ${isQuiz ? 'active' : ''}">✏️ Quiz</a>
-      <a href="/profile" class="nav-link ${isProfile ? 'active' : ''}">👤 Profile</a>
-      <a href="/leaderboard" class="nav-link ${isLeaderboard ? 'active' : ''}">🏆 Leaderboard</a>
+      <a href="${BASE_PATH}/" class="nav-link ${isDashboard ? 'active' : ''}">📊 Dashboard</a>
+      <a href="${BASE_PATH}/quiz" class="nav-link ${isQuiz ? 'active' : ''}">✏️ Quiz</a>
+      <a href="${BASE_PATH}/profile" class="nav-link ${isProfile ? 'active' : ''}">👤 Profile</a>
+      <a href="${BASE_PATH}/leaderboard" class="nav-link ${isLeaderboard ? 'active' : ''}">🏆 Leaderboard</a>
     </nav>
   `;
 
@@ -140,12 +146,12 @@ export function renderNavbar(user, activePath = window.location.pathname) {
       </button>
     `
     : `
-      <a href="/login" class="btn btn-sm btn-primary header-cta-btn">🔑 Login</a>
+      <a href="${BASE_PATH}/login" class="btn btn-sm btn-primary header-cta-btn">🔑 Login</a>
     `;
 
   header.innerHTML = `
     <div class="container header-inner">
-      <a href="/dashboard" class="brand-wordmark">
+      <a href="${BASE_PATH}/" class="brand-wordmark">
         <span class="brand-badge" aria-hidden="true">✨</span>
         <span>Who Knows Me Better?</span>
       </a>
@@ -163,7 +169,7 @@ export function renderNavbar(user, activePath = window.location.pathname) {
         } catch {
           // ignore
         }
-        window.location.href = '/login';
+        window.location.href = `${BASE_PATH}/login`;
       });
     }
   }
@@ -171,7 +177,7 @@ export function renderNavbar(user, activePath = window.location.pathname) {
   if (mobileNav) {
     mobileNav.classList.add('visible');
     mobileNav.innerHTML = `
-      <a href="/dashboard" class="mobile-tab ${isDashboard ? 'active' : ''}" aria-label="Dashboard">
+      <a href="${BASE_PATH}/" class="mobile-tab ${isDashboard ? 'active' : ''}" aria-label="Dashboard">
         <span class="mobile-tab-icon-wrap">
           <svg class="mobile-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3" y="3" width="7" height="7" rx="2"></rect>
@@ -182,7 +188,7 @@ export function renderNavbar(user, activePath = window.location.pathname) {
         </span>
         <span class="mobile-tab-label">Dashboard</span>
       </a>
-      <a href="/quiz" class="mobile-tab mobile-tab-accent ${isQuiz ? 'active' : ''}" aria-label="Quiz">
+      <a href="${BASE_PATH}/quiz" class="mobile-tab mobile-tab-accent ${isQuiz ? 'active' : ''}" aria-label="Quiz">
         <span class="mobile-tab-icon-wrap">
           <svg class="mobile-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 20h9"></path>
@@ -191,7 +197,7 @@ export function renderNavbar(user, activePath = window.location.pathname) {
         </span>
         <span class="mobile-tab-label">Quiz</span>
       </a>
-      <a href="/profile" class="mobile-tab ${isProfile ? 'active' : ''}" aria-label="Profile">
+      <a href="${BASE_PATH}/profile" class="mobile-tab ${isProfile ? 'active' : ''}" aria-label="Profile">
         <span class="mobile-tab-icon-wrap">
           <svg class="mobile-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
@@ -200,7 +206,7 @@ export function renderNavbar(user, activePath = window.location.pathname) {
         </span>
         <span class="mobile-tab-label">Profile</span>
       </a>
-      <a href="/leaderboard" class="mobile-tab ${isLeaderboard ? 'active' : ''}" aria-label="Leaderboard">
+      <a href="${BASE_PATH}/leaderboard" class="mobile-tab ${isLeaderboard ? 'active' : ''}" aria-label="Leaderboard">
         <span class="mobile-tab-icon-wrap">
           <svg class="mobile-tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"></path>
@@ -229,7 +235,7 @@ export async function requireSession() {
   const user = await getCurrentUser();
   if (!user) {
     const redirectTarget = window.location.pathname + window.location.search;
-    window.location.href = `/login?redirect=${encodeURIComponent(redirectTarget)}`;
+    window.location.href = `${BASE_PATH}/login?redirect=${encodeURIComponent(redirectTarget)}`;
     return null;
   }
   return user;
@@ -259,7 +265,11 @@ export async function shareUrl({ title, text, url }) {
 }
 
 export function getRouteSegment(indexFromStart) {
-  const parts = window.location.pathname.split('/').filter(Boolean);
+  let pathname = window.location.pathname;
+  if (pathname.startsWith(BASE_PATH)) {
+    pathname = pathname.slice(BASE_PATH.length) || '/';
+  }
+  const parts = pathname.split('/').filter(Boolean);
   return parts[indexFromStart] ? decodeURIComponent(parts[indexFromStart]) : '';
 }
 

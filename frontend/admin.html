@@ -200,7 +200,7 @@
         const state = { page: 1, pageSize: 20, total: 0, search: '' };
 
         async function api(path, options = {}) {
-            const res = await fetch('/api/admin' + path, {
+            const res = await fetch('/bondhu/api/admin' + path, {
                 credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 ...options,

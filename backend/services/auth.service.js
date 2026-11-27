@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   buildInternalAlias,
   getSupabaseProfile,
@@ -11,6 +12,10 @@ import {
 } from '../config/supabase.js';
 import { AppError, ConflictError, UnauthorizedError } from '../utils/errors.js';
 import { normalizeUsername, validateName, validatePassword } from '../utils/validators.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..', '..');
 
 const SESSION_COOKIE_NAME = 'wkm_session';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -25,7 +30,7 @@ function getSessionSecret() {
     cachedSecret = process.env.SESSION_SECRET;
     return cachedSecret;
   }
-  const secretPath = path.resolve(process.cwd(), 'data', '.session_secret');
+  const secretPath = path.resolve(projectRoot, 'data', '.session_secret');
   try {
     if (fs.existsSync(secretPath)) {
       const existing = fs.readFileSync(secretPath, 'utf8').trim();

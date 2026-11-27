@@ -6,11 +6,13 @@ import {
     listUsers,
 } from '../services/admin.service.js';
 
+const COOKIE_PATH = (process.env.BASE_PATH || '/bondhu').replace(/\/+$/, '') || '/';
+
 const cookieOpts = {
     httpOnly: true,
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production',
-    path: '/',
+    path: COOKIE_PATH,
 };
 
 export function adminLoginController(req, res) {

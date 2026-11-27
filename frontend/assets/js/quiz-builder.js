@@ -1,6 +1,7 @@
 import { api, ApiError } from './api.js';
 import { CATEGORY_SUGGESTIONS, QUESTION_CATEGORIES } from './suggestions.js';
 import {
+  BASE_PATH,
   escapeHtml,
   getRouteSegment,
   openConfirmModal,
@@ -327,7 +328,7 @@ async function initQuizBuilder() {
         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           ${
             isLive
-              ? `<a href="/quiz/${encodeURIComponent(
+              ? `<a href="${BASE_PATH}/quiz/${encodeURIComponent(
                   q.slug
                 )}" class="btn btn-outline-soft">🔗 View Quiz</a>`
               : ''
@@ -384,7 +385,7 @@ async function initQuizBuilder() {
       e.preventDefault();
       const targetUser = searchInput.value.trim().toLowerCase().replace(/^@+/, '');
       if (!targetUser) return;
-      window.location.href = `/quiz/${encodeURIComponent(targetUser)}`;
+      window.location.href = `${BASE_PATH}/quiz/${encodeURIComponent(targetUser)}`;
     });
 
     const publishBtn = document.getElementById('publish-quiz-btn');

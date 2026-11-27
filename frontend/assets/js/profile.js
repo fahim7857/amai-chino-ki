@@ -1,5 +1,6 @@
 import { api, ApiError } from './api.js';
 import {
+  BASE_PATH,
   escapeHtml,
   openConfirmModal,
   renderAvatar,
@@ -37,12 +38,12 @@ async function initProfile() {
                   )}</h3>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <a href="/create-quiz/${q.id}" class="btn btn-sm btn-outline-soft">✏️ Edit</a>
+                  <a href="${BASE_PATH}/create-quiz/${q.id}" class="btn btn-sm btn-outline-soft">✏️ Edit</a>
                   ${
                     q.status === 'published'
                       ? `
-                        <a href="/quiz/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-lavender">🎮 Open</a>
-                        <a href="/leaderboard/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-mint">🏆 Ranks</a>
+                        <a href="${BASE_PATH}/quiz/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-lavender">🎮 Open</a>
+                        <a href="${BASE_PATH}/leaderboard/${encodeURIComponent(q.slug)}" class="btn btn-sm btn-mint">🏆 Ranks</a>
                       `
                       : ''
                   }
@@ -72,7 +73,7 @@ async function initProfile() {
                   <span class="tabular-nums" style="font-size: 1rem; font-weight: 800; color: var(--primary-lilac);">${
                     item.match_percentage
                   }%</span>
-                  <a href="/quiz-result/${item.submission_id}" class="btn btn-sm btn-lavender">Result</a>
+                  <a href="${BASE_PATH}/quiz-result/${item.submission_id}" class="btn btn-sm btn-lavender">Result</a>
                 </div>
               </div>
             `
@@ -120,7 +121,7 @@ async function initProfile() {
           <section class="card">
             <div class="card-header-row">
               <h2 class="card-title">📝 My Quizzes</h2>
-              <a href="/quiz" class="btn btn-sm btn-primary">➕ New Quiz</a>
+              <a href="${BASE_PATH}/quiz" class="btn btn-sm btn-primary">➕ New Quiz</a>
             </div>
             ${myQuizzesHtml}
           </section>

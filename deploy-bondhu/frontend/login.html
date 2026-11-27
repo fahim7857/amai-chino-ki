@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Who Knows Me Better?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/bondhu/assets/css/style.css" />
+    <link rel="stylesheet" href="/bondhu/assets/css/auth.css" />
+    <link rel="stylesheet" href="/bondhu/assets/css/responsive.css" />
+  </head>
+  <body data-auth-page="login">
+    <header id="app-header" class="site-header"></header>
+
+    <main class="page-main">
+      <div class="auth-wrapper">
+        <div class="card auth-card">
+          <h1 class="auth-title">🔑 Login</h1>
+
+          <div id="auth-error" class="auth-alert hidden" role="alert"></div>
+
+          <form id="login-form" class="auth-form">
+            <div>
+              <label for="login-username" class="form-label">Username</label>
+              <div class="input-prefix-wrap">
+                <span class="input-prefix">@</span>
+                <input
+                  id="login-username"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="Username"
+                  required
+                  class="form-input input-with-prefix"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="login-password" class="form-label">Password</label>
+              <div class="input-prefix-wrap">
+                <input
+                  id="login-password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Password"
+                  required
+                  class="form-input input-with-toggle"
+                />
+                <button
+                  type="button"
+                  id="toggle-password-btn"
+                  class="password-toggle-btn"
+                  aria-label="Show password"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+
+            <button id="login-submit-btn" type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              Login
+            </button>
+          </form>
+
+          <p class="auth-footer-link" style="margin-top: 1.5rem; text-align: center;">
+            <a id="switch-to-register" href="/bondhu/register" class="text-link" style="font-weight: 700;">Create Account</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <nav id="mobile-nav" class="mobile-bottom-nav" aria-label="Mobile navigation"></nav>
+    <div id="toast-root" class="toast-stack" aria-live="polite"></div>
+
+    <script type="module" src="/bondhu/assets/js/auth.js"></script>
+  </body>
+</html>

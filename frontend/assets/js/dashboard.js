@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import {
+  BASE_PATH,
   copyToClipboard,
   escapeHtml,
   renderAvatar,
@@ -27,7 +28,7 @@ async function initDashboard() {
   try {
     const data = await api.public.getDashboardStats();
     const primaryQuiz = data.primaryQuiz;
-    const quizPath = primaryQuiz ? `/quiz/${primaryQuiz.slug}` : `/quiz/${user.username}`;
+    const quizPath = primaryQuiz ? `${BASE_PATH}/quiz/${primaryQuiz.slug}` : `${BASE_PATH}/quiz/${user.username}`;
     const fullQuizUrl = `${window.location.origin}${quizPath}`;
     const firstName = user.name.split(' ')[0];
 
@@ -170,7 +171,7 @@ async function initDashboard() {
               <button type="button" id="copy-quiz-link-btn" class="btn btn-sm btn-outline-soft">📋 Copy Link</button>
               <button type="button" id="share-quiz-btn" class="btn btn-sm btn-pink">📤 Share</button>
               <a href="${
-                primaryQuiz ? `/create-quiz/${primaryQuiz.id}` : '/quiz'
+                primaryQuiz ? `${BASE_PATH}/create-quiz/${primaryQuiz.id}` : `${BASE_PATH}/quiz`
               }" class="btn btn-sm btn-primary ml-auto">${
                 primaryQuiz ? '✏️ Edit Quiz' : '➕ Create Quiz'
               }</a>
@@ -185,7 +186,7 @@ async function initDashboard() {
           </div>
           ${
             primaryQuiz && primaryQuiz.status === 'published'
-              ? `<a href="/leaderboard/${encodeURIComponent(
+              ? `<a href="${BASE_PATH}/leaderboard/${encodeURIComponent(
                   primaryQuiz.slug
                 )}" class="btn btn-sm btn-outline-soft" style="margin-top: 1rem; align-self: flex-start;">🏆 View Leaderboard</a>`
               : ''
@@ -223,7 +224,7 @@ async function initDashboard() {
             <h2 class="card-title">🏆 Top Scores</h2>
             ${
               primaryQuiz
-                ? `<a href="/leaderboard/${encodeURIComponent(
+                ? `<a href="${BASE_PATH}/leaderboard/${encodeURIComponent(
                     primaryQuiz.slug
                   )}" class="text-link" style="font-size: 0.8rem; font-weight: 700;">View All &#8594;</a>`
                 : ''
@@ -241,7 +242,7 @@ async function initDashboard() {
       e.preventDefault();
       const targetUser = searchInput.value.trim().toLowerCase().replace(/^@+/, '');
       if (!targetUser) return;
-      window.location.href = `/quiz/${encodeURIComponent(targetUser)}`;
+      window.location.href = `${BASE_PATH}/quiz/${encodeURIComponent(targetUser)}`;
     });
 
     // Wire Copy Quiz link

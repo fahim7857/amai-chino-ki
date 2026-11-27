@@ -35,6 +35,8 @@ export function requireAuth(req, _res, next) {
   next();
 }
 
+const COOKIE_PATH = (process.env.BASE_PATH || '/bondhu').replace(/\/+$/, '') || '/';
+
 export function setSessionCookie(res, token) {
   const isProd = process.env.NODE_ENV === 'production';
   res.cookie(getSessionCookieName(), token, {
@@ -42,7 +44,7 @@ export function setSessionCookie(res, token) {
     sameSite: 'lax',
     secure: isProd,
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    path: '/',
+    path: COOKIE_PATH,
   });
 }
 
@@ -50,6 +52,6 @@ export function clearSessionCookie(res) {
   res.clearCookie(getSessionCookieName(), {
     httpOnly: true,
     sameSite: 'lax',
-    path: '/',
+    path: COOKIE_PATH,
   });
 }
