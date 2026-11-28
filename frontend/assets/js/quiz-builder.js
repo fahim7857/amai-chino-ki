@@ -1,5 +1,12 @@
 import { api, ApiError } from './api.js';
-import { CATEGORY_SUGGESTIONS, QUESTION_CATEGORIES } from './suggestions.js';
+import {
+  BILINGUAL_SUGGESTIONS,
+  CATEGORY_LABELS,
+  CATEGORY_SUGGESTIONS,
+  convertSuggestion,
+  getCategorySuggestion,
+  QUESTION_CATEGORIES,
+} from './suggestions.js';
 import {
   BASE_PATH,
   escapeHtml,
@@ -31,6 +38,14 @@ async function initQuizBuilder() {
   const routeIdRaw = getRouteSegment(1);
   const quizIdParam = routeIdRaw && Number.isInteger(Number(routeIdRaw)) ? Number(routeIdRaw) : null;
   const draftStorageKey = `wkm_draft_question_${user.username}`;
+  const langStorageKey = `wkm_suggestion_lang_${user.username}`;
+
+  let savedLang = 'en';
+  try {
+    savedLang = localStorage.getItem(langStorageKey) || 'en';
+  } catch {
+    savedLang = 'en';
+  }
 
   const state = {
     quiz: null,
@@ -38,6 +53,7 @@ async function initQuizBuilder() {
     description: '',
     editingQuestionId: null,
     category: 'Favourite Food',
+    lang: savedLang === 'bn' ? 'bn' : 'en',
     questionText: '',
     options: createDefaultOptions(),
   };
@@ -65,6 +81,9 @@ async function initQuizBuilder() {
           if (parsed.category && QUESTION_CATEGORIES.includes(parsed.category)) {
             state.category = parsed.category;
           }
+          if (parsed.lang && (parsed.lang === 'bn' || parsed.lang === 'en')) {
+            state.lang = parsed.lang;
+          }
           if (Array.isArray(parsed.options) && parsed.options.length >= 4) {
             state.options = parsed.options;
           }
@@ -84,6 +103,7 @@ async function initQuizBuilder() {
         draftStorageKey,
         JSON.stringify({
           category: state.category,
+          lang: state.lang,
           questionText: state.questionText,
           options: state.options,
         })
@@ -104,14 +124,53 @@ async function initQuizBuilder() {
     return state.quiz;
   }
 
-  function applySuggestion(cat) {
-    const sug = CATEGORY_SUGGESTIONS[cat];
+  function applySuggestion(cat, targetLang = state.lang) {
+    const sug = getCategorySuggestion(cat, targetLang);
     if (!sug) return;
     state.questionText = sug.question;
     state.options = sug.options.map((text, idx) => ({
       text,
       isCorrect: idx === 0,
     }));
+    persistDraft();
+    render();
+  }
+
+  function switchSuggestionLanguage(newLang) {
+    if (state.lang === newLang) return;
+    state.lang = newLang;
+    try {
+      localStorage.setItem(langStorageKey, newLang);
+    } catch {
+      // ignore
+    }
+
+    // Identify if current question or category can be converted automatically
+    let detectedCategory = state.category;
+    let matchedCorrectIndex = state.options.findIndex((o) => o.isCorrect);
+    if (matchedCorrectIndex < 0) matchedCorrectIndex = 0;
+
+    // Check if the current question matches any known category in either language
+    for (const [catName, bilingual] of Object.entries(BILINGUAL_SUGGESTIONS)) {
+      if (
+        state.questionText === bilingual.en.question ||
+        state.questionText === bilingual.bn.question
+      ) {
+        detectedCategory = catName;
+        state.category = catName;
+        break;
+      }
+    }
+
+    const targetSug = getCategorySuggestion(detectedCategory, newLang);
+    if (targetSug) {
+      state.questionText = targetSug.question;
+      state.options = targetSug.options.map((text, idx) => ({
+        text,
+        isCorrect: idx === matchedCorrectIndex,
+      }));
+    }
+
     persistDraft();
     render();
   }
@@ -153,21 +212,45 @@ async function initQuizBuilder() {
       ? '<span style="color: #137333; font-weight: 700;">Live ✅</span>'
       : '<span style="color: #B06000; font-weight: 700;">Draft 📝</span>';
 
+    const labels = CATEGORY_LABELS[state.lang] || CATEGORY_LABELS.en;
     const categoryOptionsHtml = QUESTION_CATEGORIES.map(
       (cat) =>
         `<option value="${escapeHtml(cat)}" ${
           state.category === cat ? 'selected' : ''
-        }>${escapeHtml(cat)}</option>`
+        }>${escapeHtml(labels[cat] || cat)}</option>`
     ).join('');
 
     const editorBodyHtml = `
       <form id="question-form" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
-        <div class="category-row">
-          <div style="flex: 1 1 auto; min-width: 0;">
-            <label for="q-category" class="form-label-sm">Topic</label>
+        <div class="category-row" style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+          <div style="flex: 1 1 200px; min-width: 0;">
+            <label for="q-category" class="form-label-sm">Topic / বিষয়</label>
             <select id="q-category" class="form-select">${categoryOptionsHtml}</select>
           </div>
-          <div style="flex-shrink: 0; align-self: flex-end;">
+
+          <div style="flex-shrink: 0;">
+            <label class="form-label-sm" style="display: block; margin-bottom: 0.35rem;">Suggestion Language</label>
+            <div class="lang-switch-group" style="display: inline-flex; border-radius: 999px; background: #F1F3F4; padding: 3px; gap: 3px; border: 1px solid #E0E0E0;">
+              <button
+                type="button"
+                id="lang-btn-en"
+                class="lang-pill-btn ${state.lang === 'en' ? 'active' : ''}"
+                style="border: none; border-radius: 999px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; ${
+                  state.lang === 'en' ? 'background: #6C5CE7; color: #fff; box-shadow: 0 2px 4px rgba(108,92,231,0.3);' : 'background: transparent; color: #555;'
+                }"
+              >English</button>
+              <button
+                type="button"
+                id="lang-btn-bn"
+                class="lang-pill-btn ${state.lang === 'bn' ? 'active' : ''}"
+                style="border: none; border-radius: 999px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; ${
+                  state.lang === 'bn' ? 'background: #6C5CE7; color: #fff; box-shadow: 0 2px 4px rgba(108,92,231,0.3);' : 'background: transparent; color: #555;'
+                }"
+              >বাংলা</button>
+            </div>
+          </div>
+
+          <div style="flex-shrink: 0;">
             <button type="button" id="use-suggestion-btn" class="btn btn-pink" style="min-height: 44px;">✨ Suggest</button>
           </div>
         </div>
@@ -192,7 +275,11 @@ async function initQuizBuilder() {
             id="q-text"
             type="text"
             maxlength="280"
-            placeholder="Write question here (e.g. What is my favorite food? 🍕❤️)"
+            placeholder="${
+              state.lang === 'bn'
+                ? 'প্রশ্নটি এখানে লিখুন (যেমন: আমার সবচেয়ে প্রিয় খাবার কোনটি? 🍕❤️)'
+                : 'Write question here (e.g. What is my favorite food? 🍕❤️)'
+            }"
             value="${escapeHtml(state.questionText)}"
             class="form-input"
             required
@@ -223,7 +310,7 @@ async function initQuizBuilder() {
                 <input
                   type="text"
                   maxlength="140"
-                  placeholder="Option ${idx + 1}"
+                  placeholder="${state.lang === 'bn' ? `অপশন ${idx + 1}` : `Option ${idx + 1}`}"
                   value="${escapeHtml(opt.text)}"
                   data-opt-idx="${idx}"
                   class="form-input ${opt.isCorrect ? 'option-correct' : ''}"
@@ -381,12 +468,14 @@ async function initQuizBuilder() {
     // Search friend's exam
     const searchForm = document.getElementById('search-quiz-form-builder');
     const searchInput = document.getElementById('search-username-input-builder');
-    searchForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const targetUser = searchInput.value.trim().toLowerCase().replace(/^@+/, '');
-      if (!targetUser) return;
-      window.location.href = `${BASE_PATH}/quiz/${encodeURIComponent(targetUser)}`;
-    });
+    if (searchForm && searchInput) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const targetUser = searchInput.value.trim().toLowerCase().replace(/^@+/, '');
+        if (!targetUser) return;
+        window.location.href = `${BASE_PATH}/quiz/${encodeURIComponent(targetUser)}`;
+      });
+    }
 
     const publishBtn = document.getElementById('publish-quiz-btn');
     if (publishBtn) {
@@ -408,47 +497,63 @@ async function initQuizBuilder() {
     }
 
     const titleInput = document.getElementById('quiz-title-input');
-    titleInput.addEventListener('input', () => {
-      state.title = titleInput.value;
-    });
+    if (titleInput) {
+      titleInput.addEventListener('input', () => {
+        state.title = titleInput.value;
+      });
+    }
 
-    document.getElementById('quiz-meta-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!state.title.trim()) {
-        showToast('error', 'Enter a quiz title.');
-        return;
-      }
-      const btn = document.getElementById('save-meta-btn');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-      try {
-        if (!state.quiz) {
-          await ensureQuizExists();
-          showToast('success', 'Quiz created! 🚀');
-        } else {
-          const res = await api.quizzes.update(state.quiz.id, {
-            title: state.title.trim(),
-            description: state.description.trim(),
-          });
-          state.quiz = res.quiz;
-          showToast('success', 'Saved! ✅');
+    const metaForm = document.getElementById('quiz-meta-form');
+    if (metaForm) {
+      metaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!state.title.trim()) {
+          showToast('error', 'Enter a quiz title.');
+          return;
         }
-        render();
-      } catch (err) {
-        showToast('error', err instanceof ApiError ? err.message : 'Could not save.');
-        btn.disabled = false;
-        render();
-      }
-    });
+        const btn = document.getElementById('save-meta-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        try {
+          if (!state.quiz) {
+            await ensureQuizExists();
+            showToast('success', 'Quiz created! 🚀');
+          } else {
+            const res = await api.quizzes.update(state.quiz.id, {
+              title: state.title.trim(),
+              description: state.description.trim(),
+            });
+            state.quiz = res.quiz;
+            showToast('success', 'Saved! ✅');
+          }
+          render();
+        } catch (err) {
+          showToast('error', err instanceof ApiError ? err.message : 'Could not save.');
+          btn.disabled = false;
+          render();
+        }
+      });
+    }
+
+    // Language pills (English / বাংলা)
+    const langBtnEn = document.getElementById('lang-btn-en');
+    const langBtnBn = document.getElementById('lang-btn-bn');
+    if (langBtnEn) {
+      langBtnEn.addEventListener('click', () => switchSuggestionLanguage('en'));
+    }
+    if (langBtnBn) {
+      langBtnBn.addEventListener('click', () => switchSuggestionLanguage('bn'));
+    }
 
     const catSelect = document.getElementById('q-category');
     if (catSelect) {
       catSelect.addEventListener('change', () => {
         state.category = catSelect.value;
         if (!state.questionText.trim() && state.options.every((o) => !o.text.trim())) {
-          applySuggestion(state.category);
+          applySuggestion(state.category, state.lang);
         } else {
-          persistDraft();
+          // If the question currently matches another suggestion, automatically update it to new category
+          applySuggestion(state.category, state.lang);
         }
       });
     }
@@ -456,7 +561,7 @@ async function initQuizBuilder() {
     const sugBtn = document.getElementById('use-suggestion-btn');
     if (sugBtn) {
       sugBtn.addEventListener('click', () => {
-        applySuggestion(state.category);
+        applySuggestion(state.category, state.lang);
       });
     }
 
